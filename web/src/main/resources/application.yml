@@ -13,3 +13,11 @@ server:
     include-stacktrace: always
     whitelabel:
       enabled: true
+
+pinpoint.modules.web:
+    # github or url
+    install.type: github
+    # basicLogin
+    login:
+
+

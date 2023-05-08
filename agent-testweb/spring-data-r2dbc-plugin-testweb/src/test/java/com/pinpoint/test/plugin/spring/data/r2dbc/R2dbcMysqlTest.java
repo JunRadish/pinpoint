@@ -24,8 +24,6 @@ import org.junit.Test;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.MySQLContainer;
 
-import java.util.concurrent.TimeUnit;
-
 public class R2dbcMysqlTest {
     public static final String DATABASE_NAME = "test";
     public static final String USERNAME = "root";
@@ -37,7 +35,7 @@ public class R2dbcMysqlTest {
     public static void beforeClass() {
         Assume.assumeTrue("Docker not enabled", DockerClientFactory.instance().isDockerAvailable());
 
-        container = new MySQLContainer();
+        container = new MySQLContainer("mysql:5.7.34");
         container.withDatabaseName(DATABASE_NAME);
         container.withUsername(USERNAME);
         container.withPassword(PASSWORD);

@@ -1,45 +1,49 @@
 package com.navercorp.pinpoint.web.config;
 
-import org.junit.jupiter.api.Assertions;
+import com.navercorp.pinpoint.web.frontend.config.ExperimentalProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ExperimentalConfigTest {
 
     @Test
     public void getProperties_filter() {
         MockEnvironment environment = new MockEnvironment();
-        String key = ExperimentalConfig.PREFIX + "test";
+        String key = ExperimentalProperties.PREFIX + "test";
         environment.setProperty(key, "strValue");
         environment.setProperty("ignore.test", "aabbcc");
 
-        ExperimentalConfig config = new ExperimentalConfig(environment);
+        ExperimentalProperties config = ExperimentalProperties.of(environment);
 
         Map<String, Object> map = config.getProperties();
 
-        Assertions.assertEquals(1, map.size());
-        Assertions.assertEquals("strValue", map.get(key));
+        assertThat(map)
+                .hasSize(1)
+                .containsEntry(key, "strValue");
+
     }
 
     @Test
     public void getProperties_boolean() {
         MockEnvironment environment = new MockEnvironment();
 
-        String falseKey = ExperimentalConfig.PREFIX + "boolean.false";
+        String falseKey = ExperimentalProperties.PREFIX + "boolean.false";
         environment.setProperty(falseKey, "false");
 
-        String trueKey = ExperimentalConfig.PREFIX + "boolean.true";
+        String trueKey = ExperimentalProperties.PREFIX + "boolean.true";
         environment.setProperty(trueKey, "true");
 
 
-        ExperimentalConfig config = new ExperimentalConfig(environment);
+        ExperimentalProperties config = ExperimentalProperties.of(environment);
         Map<String, Object> map = config.getProperties();
 
-
-        Assertions.assertEquals(Boolean.FALSE, map.get(falseKey));
-        Assertions.assertEquals(Boolean.TRUE, map.get(trueKey));
+        assertThat(map)
+                .containsEntry(falseKey, false)
+                .containsEntry(trueKey, true);
     }
 
 

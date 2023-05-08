@@ -40,26 +40,43 @@ public abstract class QueryParameter {
         return limit;
     }
 
-    public static abstract class Builder {
+    public static abstract class Builder<S extends Builder> {
         protected Range range;
         protected TimePrecision timePrecision;
         protected int timeSize = 10000;
         protected long limit;
 
-        public void setRange(Range range) {
+        protected abstract S self();
+
+        public S setRange(Range range) {
             this.range = range;
+            return self();
         }
 
-        public void setTimePrecision(TimePrecision timePrecision) {
+        public S setTimePrecision(TimePrecision timePrecision) {
             this.timePrecision = timePrecision;
+            return self();
         }
 
-        public void setTimeSize(int timeSize) {
+        public S setTimeSize(int timeSize) {
             this.timeSize = timeSize;
+            return self();
         }
 
         public long estimateLimit() {
             return (range.getRange() / timePrecision.getInterval() + 1) * TAG_SET_COUNT;
+        }
+
+        public Range getRange() {
+            return this.range;
+        }
+
+        public TimePrecision getTimePrecision() {
+            return this.timePrecision;
+        }
+
+        public long getLimit() {
+            return this.limit;
         }
 
         abstract public QueryParameter build();

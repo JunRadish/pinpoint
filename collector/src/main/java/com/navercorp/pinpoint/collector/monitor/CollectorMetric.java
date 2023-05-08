@@ -16,7 +16,7 @@
 
 package com.navercorp.pinpoint.collector.monitor;
 
-import com.navercorp.pinpoint.collector.config.CollectorConfiguration;
+import com.navercorp.pinpoint.collector.config.CollectorProperties;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.JvmAttributeGaugeSet;
@@ -32,6 +32,7 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.slf4j.Log4jLoggerFactory;
+import org.apache.logging.slf4j.Log4jMarkerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
@@ -54,7 +55,7 @@ public class CollectorMetric {
 
     public static final String REPORTER_LOGGER_NAME = "com.navercorp.pinpoint.collector.StateReport";
 
-    private final CollectorConfiguration collectorConfiguration;
+    private final CollectorProperties collectorProperties;
 
     private final MetricRegistry metricRegistry;
 
@@ -65,11 +66,11 @@ public class CollectorMetric {
 
     private final boolean isEnable = isEnable0(REPORTER_LOGGER_NAME);
 
-    public CollectorMetric(CollectorConfiguration collectorConfiguration,
+    public CollectorMetric(CollectorProperties collectorProperties,
                            MetricRegistry metricRegistry,
                            Optional<HBaseAsyncOperationMetrics> hBaseAsyncOperationMetrics,
                            Optional<BulkOperationMetrics> cachedStatisticsDaoMetrics) {
-        this.collectorConfiguration = Objects.requireNonNull(collectorConfiguration, "collectorConfiguration");
+        this.collectorProperties = Objects.requireNonNull(collectorProperties, "collectorProperties");
         this.metricRegistry = Objects.requireNonNull(metricRegistry, "metricRegistry");
         this.hBaseAsyncOperationMetrics = hBaseAsyncOperationMetrics.orElse(null);
         this.bulkOperationMetrics = cachedStatisticsDaoMetrics.orElse(null);
@@ -122,9 +123,9 @@ public class CollectorMetric {
 
         reporterList.add(slf4jReporter);
 
-        if (collectorConfiguration.isMetricJmxEnable()) {
+        if (collectorProperties.isMetricJmxEnable()) {
 
-            final String metricJmxDomainName = collectorConfiguration.getMetricJmxDomainName();
+            final String metricJmxDomainName = collectorProperties.getMetricJmxDomainName();
             Assert.hasLength(metricJmxDomainName, "metricJmxDomainName must not be empty");
 
             final JmxReporter jmxReporter = createJmxReporter(metricJmxDomainName);
@@ -138,7 +139,8 @@ public class CollectorMetric {
         builder.convertRatesTo(TimeUnit.SECONDS);
         builder.convertDurationsTo(TimeUnit.MILLISECONDS);
 
-        Log4jLoggerFactory log4jLoggerFactory = new Log4jLoggerFactory();
+        Log4jMarkerFactory log4jMarkerFactory = new Log4jMarkerFactory();
+        Log4jLoggerFactory log4jLoggerFactory = new Log4jLoggerFactory(log4jMarkerFactory);
 
         final org.slf4j.Logger reporterLogger = log4jLoggerFactory.getLogger(REPORTER_LOGGER_NAME);
         builder.outputTo(reporterLogger);

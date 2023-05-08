@@ -27,7 +27,7 @@ import com.navercorp.pinpoint.metric.common.model.Metrics;
 import com.navercorp.pinpoint.metric.common.model.SystemMetric;
 import com.navercorp.pinpoint.metric.common.model.Tag;
 import com.navercorp.pinpoint.metric.common.model.validation.SimpleErrorMessage;
-import com.navercorp.pinpoint.metric.common.pinot.TenantProvider;
+import com.navercorp.pinpoint.pinot.tenant.TenantProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.http.ResponseEntity;

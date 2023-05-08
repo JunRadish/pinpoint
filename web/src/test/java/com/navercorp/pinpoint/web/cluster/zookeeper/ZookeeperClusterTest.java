@@ -21,7 +21,7 @@ import com.navercorp.pinpoint.common.server.cluster.zookeeper.ZookeeperConstants
 import com.navercorp.pinpoint.common.server.cluster.zookeeper.exception.PinpointZookeeperException;
 import com.navercorp.pinpoint.common.util.NetUtils;
 import com.navercorp.pinpoint.web.cluster.ClusterId;
-import com.navercorp.pinpoint.web.config.WebClusterConfig;
+import com.navercorp.pinpoint.web.config.WebClusterProperties;
 import com.navercorp.pinpoint.web.util.PinpointWebTestUtils;
 import org.apache.curator.test.TestingServer;
 import org.apache.curator.utils.ZKPaths;
@@ -41,14 +41,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.util.SocketUtils;
+import org.springframework.test.util.TestSocketUtils;
 
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.Mockito.when;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Taejin Koo
@@ -60,7 +60,7 @@ public class ZookeeperClusterTest {
     private static final String DEFAULT_IP = PinpointWebTestUtils.getRepresentationLocalV4Ip();
 
     private static int zookeeperPort;
-    private static WebClusterConfig webClusterConfig;
+    private static WebClusterProperties webClusterProperties;
 
     private static final String COLLECTOR_TEST_NODE_PATH
             = ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.COLLECTOR_LEAF_PATH, "test");
@@ -76,29 +76,29 @@ public class ZookeeperClusterTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        int acceptorPort = SocketUtils.findAvailableTcpPort();
-        zookeeperPort = SocketUtils.findAvailableTcpPort(acceptorPort + 1);
+        int acceptorPort = TestSocketUtils.findAvailableTcpPort();
+        zookeeperPort = TestSocketUtils.findAvailableTcpPort();
 
         CLUSTER_NODE_PATH
                 = ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.WEB_LEAF_PATH, DEFAULT_IP + ":" + acceptorPort);
 
         ts = createZookeeperServer(zookeeperPort);
 
-        webClusterConfig = getWebClusterConfig();
+        webClusterProperties = getWebClusterProperties();
     }
 
-    private static WebClusterConfig getWebClusterConfig() {
-        WebClusterConfig mockWebClusterConfig = Mockito.mock(WebClusterConfig.class);
-        when(mockWebClusterConfig.getClusterZookeeperAddress()).thenReturn(DEFAULT_IP + ":" + zookeeperPort);
-        when(mockWebClusterConfig.getClusterZookeeperSessionTimeout()).thenReturn(5000);
-        when(mockWebClusterConfig.getClusterZookeeperRetryInterval()).thenReturn(60000);
-        when(mockWebClusterConfig.getWebZNodePath()).
+    private static WebClusterProperties getWebClusterProperties() {
+        WebClusterProperties mockWebClusterProperties = Mockito.mock(WebClusterProperties.class);
+        when(mockWebClusterProperties.getClusterZookeeperAddress()).thenReturn(DEFAULT_IP + ":" + zookeeperPort);
+        when(mockWebClusterProperties.getClusterZookeeperSessionTimeout()).thenReturn(5000);
+        when(mockWebClusterProperties.getClusterZookeeperRetryInterval()).thenReturn(60000);
+        when(mockWebClusterProperties.getWebZNodePath()).
                 thenReturn(ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.WEB_LEAF_PATH));
-        when(mockWebClusterConfig.getCollectorZNodePath()).
+        when(mockWebClusterProperties.getCollectorZNodePath()).
                 thenReturn(ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.COLLECTOR_LEAF_PATH));
-        when(mockWebClusterConfig.getPullRetryIntervalTimeMillis()).
+        when(mockWebClusterProperties.getPullRetryIntervalTimeMillis()).
                 thenReturn(15000);
-        return mockWebClusterConfig;
+        return mockWebClusterProperties;
     }
 
     @AfterAll
@@ -126,17 +126,17 @@ public class ZookeeperClusterTest {
             createPath(zookeeper, COLLECTOR_TEST_NODE_PATH, true);
             zookeeper.setData(COLLECTOR_TEST_NODE_PATH, "a:b:1".getBytes(), -1);
 
-            manager = new ZookeeperClusterDataManager(webClusterConfig);
+            manager = new ZookeeperClusterDataManager(webClusterProperties);
             manager.start();
             awaitClusterManagerConnected(manager);
 
             awaitCheckAgentRegistered(manager, new ClusterKey("a", "b", 1L));
             List<ClusterId> agentList = manager.getRegisteredAgentList(new ClusterKey("a", "b", 1L));
-            Assertions.assertEquals(1, agentList.size());
+            assertThat(agentList).hasSize(1);
             Assertions.assertEquals("test", agentList.get(0).getCollectorId());
 
             agentList = manager.getRegisteredAgentList(new ClusterKey("b", "c", 1L));
-            Assertions.assertEquals(0, agentList.size());
+            assertThat(agentList).isEmpty();
             zookeeper.setData(COLLECTOR_TEST_NODE_PATH, "".getBytes(), -1);
             awaitCheckAgentUnRegistered(manager, new ClusterKey("a", "b", 1L));
 
@@ -172,24 +172,24 @@ public class ZookeeperClusterTest {
             createPath(zookeeper, COLLECTOR_TEST_NODE_PATH, true);
             zookeeper.setData(COLLECTOR_TEST_NODE_PATH, "a:b:1".getBytes(), -1);
 
-            manager = new ZookeeperClusterDataManager(webClusterConfig);
+            manager = new ZookeeperClusterDataManager(webClusterProperties);
             manager.start();
             awaitClusterManagerConnected(manager);
 
             awaitCheckAgentRegistered(manager, new ClusterKey("a", "b", 1L));
             List<ClusterId> agentList = manager.getRegisteredAgentList(new ClusterKey("a", "b", 1L));
-            Assertions.assertEquals(1, agentList.size());
+            assertThat(agentList).hasSize(1);
             Assertions.assertEquals("test", agentList.get(0).getCollectorId());
 
             zookeeper.setData(COLLECTOR_TEST_NODE_PATH, "a:b:1\r\nc:d:2".getBytes(), -1);
             awaitCheckAgentRegistered(manager, new ClusterKey("c", "d", 2L));
 
             agentList = manager.getRegisteredAgentList(new ClusterKey("a", "b", 1L));
-            Assertions.assertEquals(1, agentList.size());
+            assertThat(agentList).hasSize(1);
             Assertions.assertEquals("test", agentList.get(0).getCollectorId());
 
             agentList = manager.getRegisteredAgentList(new ClusterKey("c", "d", 2L));
-            Assertions.assertEquals(1, agentList.size());
+            assertThat(agentList).hasSize(1);
             Assertions.assertEquals("test", agentList.get(0).getCollectorId());
 
             zookeeper.delete(COLLECTOR_TEST_NODE_PATH, -1);
@@ -198,10 +198,10 @@ public class ZookeeperClusterTest {
             awaitCheckAgentUnRegistered(manager, new ClusterKey("a", "b", 1L));
 
             agentList = manager.getRegisteredAgentList(new ClusterKey("a", "b", 1L));
-            Assertions.assertEquals(0, agentList.size());
+            assertThat(agentList).isEmpty();
 
             agentList = manager.getRegisteredAgentList(new ClusterKey("c", "d", 2L));
-            Assertions.assertEquals(0, agentList.size());
+            assertThat(agentList).isEmpty();
         } finally {
             closeZk(zookeeper);
             closeManager(manager);
@@ -252,10 +252,10 @@ public class ZookeeperClusterTest {
 
         List<String> ipList = NetUtils.getLocalV4IpList();
 
-        Assertions.assertEquals(registeredIpList.length, ipList.size());
+        assertThat(ipList).hasSize(registeredIpList.length);
 
         for (String ip : registeredIpList) {
-            Assertions.assertTrue(ipList.contains(ip));
+            assertThat(ipList).contains(ip);
         }
     }
 

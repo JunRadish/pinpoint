@@ -32,12 +32,15 @@ import com.navercorp.pinpoint.bootstrap.logging.PLogger;
 import com.navercorp.pinpoint.bootstrap.logging.PLoggerFactory;
 import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPlugin;
 import com.navercorp.pinpoint.bootstrap.plugin.ProfilerPluginSetupContext;
+import com.navercorp.pinpoint.common.util.ArrayUtils;
 import com.navercorp.pinpoint.common.util.VarArgs;
 import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.CancelledInterceptor;
 import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.DispatchInterceptor;
+import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.MonoCoroutineConstructorInterceptor;
 import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.NotifyCancellingInterceptor;
 import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.ResumeWithInterceptor;
 import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.ScheduleResumeInterceptor;
+import com.navercorp.pinpoint.plugin.kotlinx.coroutines.interceptor.SetContextCoroutineConstructorInterceptor;
 
 import java.security.ProtectionDomain;
 import java.util.List;
@@ -97,13 +100,11 @@ public class CoroutinesPlugin implements ProfilerPlugin, MatchableTransformTempl
         if (config.isTraceCancelEvent()) {
             addJobCancelTransformer();
         }
+        addAsyncCoroutine();
+        addReactorCoroutine();
     }
 
     private void addContinuationTransformer() {
-        //        Matcher matcher = Matchers.newClassBasedMatcher("kotlinx.coroutines.Continuation");
-        //        transformTemplate.transform(matcher, ContinuationTransform.class);
-        //
-
         // It will be excpected that only the below class to be traced will be sufficient,
         // because user's coroutine implementation is regenerated based on BaseContinuationImpl.
         // However, need to uncomment the above section if it is not being traced.
@@ -122,6 +123,19 @@ public class CoroutinesPlugin implements ProfilerPlugin, MatchableTransformTempl
 
     private void addJobCancelTransformer() {
         transformTemplate.transform("kotlinx.coroutines.JobSupport", JobCancelTransform.class);
+    }
+
+    private void addAsyncCoroutine() {
+        // CoroutineScope.async()
+        transformTemplate.transform("kotlinx.coroutines.internal.ScopeCoroutine", BuilderTransform.class);
+        transformTemplate.transform("kotlinx.coroutines.LazyDeferredCoroutine", BuilderTransform.class);
+        transformTemplate.transform("kotlinx.coroutines.DeferredCoroutine", BuilderTransform.class);
+        transformTemplate.transform("kotlinx.coroutines.LazyStandaloneCoroutine", BuilderTransform.class);
+        transformTemplate.transform("kotlinx.coroutines.StandaloneCoroutine", BuilderTransform.class);
+    }
+
+    private void addReactorCoroutine() {
+        transformTemplate.transform("kotlinx.coroutines.reactor.MonoCoroutine", MonoCoroutineTransform.class);
     }
 
     public static class ContinuationTransform implements TransformCallback {
@@ -195,7 +209,40 @@ public class CoroutinesPlugin implements ProfilerPlugin, MatchableTransformTempl
 
             return target.toBytecode();
         }
+    }
 
+    public static class MonoCoroutineTransform implements TransformCallback {
+
+        @Override
+        public byte[] doInTransform(Instrumentor instrumentor, ClassLoader classLoader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws InstrumentException {
+            final InstrumentClass target = instrumentor.getInstrumentClass(classLoader, className, classfileBuffer);
+
+            for (InstrumentMethod constructorMethod : target.getDeclaredConstructors()) {
+                final String[] parameterTypes = constructorMethod.getParameterTypes();
+                if (ArrayUtils.hasLength(parameterTypes)) {
+                    constructorMethod.addInterceptor(MonoCoroutineConstructorInterceptor.class);
+                }
+            }
+
+            return target.toBytecode();
+        }
+    }
+
+    public static class BuilderTransform implements TransformCallback {
+
+        @Override
+        public byte[] doInTransform(Instrumentor instrumentor, ClassLoader classLoader, String className, Class<?> classBeingRedefined, ProtectionDomain protectionDomain, byte[] classfileBuffer) throws InstrumentException {
+            final InstrumentClass target = instrumentor.getInstrumentClass(classLoader, className, classfileBuffer);
+
+            for (InstrumentMethod constructorMethod : target.getDeclaredConstructors()) {
+                final String[] parameterTypes = constructorMethod.getParameterTypes();
+                if (ArrayUtils.hasLength(parameterTypes)) {
+                    constructorMethod.addInterceptor(SetContextCoroutineConstructorInterceptor.class);
+                }
+            }
+
+            return target.toBytecode();
+        }
     }
 
 }

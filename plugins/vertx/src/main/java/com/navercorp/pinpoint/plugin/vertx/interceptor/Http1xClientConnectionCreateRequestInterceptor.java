@@ -47,8 +47,8 @@ public abstract class Http1xClientConnectionCreateRequestInterceptor implements 
     private final PLogger logger = PLoggerFactory.getLogger(this.getClass());
     private final boolean isDebug = logger.isDebugEnabled();
 
-    private TraceContext traceContext;
-    private MethodDescriptor descriptor;
+    private final TraceContext traceContext;
+    private final MethodDescriptor descriptor;
     private final ClientRequestRecorder<ClientRequestWrapper> clientRequestRecorder;
     private final CookieRecorder<HttpRequest> cookieRecorder;
     private final RequestTraceWriter<HttpRequest> requestTraceWriter;
@@ -173,7 +173,6 @@ public abstract class Http1xClientConnectionCreateRequestInterceptor implements 
 
     private boolean validate(final Object[] args, final Object result) {
         if (!(result instanceof HttpRequest)) {
-            logger.debug("Invalid result object. {}.", result);
             return false;
         }
 

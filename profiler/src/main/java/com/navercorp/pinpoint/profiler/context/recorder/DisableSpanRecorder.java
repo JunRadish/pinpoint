@@ -23,8 +23,8 @@ import com.navercorp.pinpoint.common.trace.LoggingInfo;
 import com.navercorp.pinpoint.common.trace.ServiceType;
 import com.navercorp.pinpoint.common.util.DataType;
 import com.navercorp.pinpoint.profiler.context.errorhandler.IgnoreErrorHandler;
+import com.navercorp.pinpoint.profiler.context.id.LocalTraceRoot;
 import com.navercorp.pinpoint.profiler.context.id.Shared;
-import com.navercorp.pinpoint.profiler.context.id.TraceRoot;
 
 import java.util.Objects;
 
@@ -32,10 +32,13 @@ import java.util.Objects;
  * @author Woonduk Kang(emeroad)
  */
 public class DisableSpanRecorder implements SpanRecorder {
-    private final TraceRoot traceRoot;
+
+    public static final String UNSUPPORTED_OPERATION = "DisableSpanRecorder";
+
+    private final LocalTraceRoot traceRoot;
     private final IgnoreErrorHandler ignoreErrorHandler;
 
-    public DisableSpanRecorder(TraceRoot traceRoot, IgnoreErrorHandler ignoreErrorHandler) {
+    public DisableSpanRecorder(LocalTraceRoot traceRoot, IgnoreErrorHandler ignoreErrorHandler) {
         this.traceRoot = Objects.requireNonNull(traceRoot, "traceRoot");
         this.ignoreErrorHandler = Objects.requireNonNull(ignoreErrorHandler, "ignoreErrorHandler");
     }
@@ -213,16 +216,16 @@ public class DisableSpanRecorder implements SpanRecorder {
 
     @Override
     public Object attachFrameObject(Object frameObject) {
-        return null;
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public Object getFrameObject() {
-        return null;
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
     public Object detachFrameObject() {
-        return null;
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 }

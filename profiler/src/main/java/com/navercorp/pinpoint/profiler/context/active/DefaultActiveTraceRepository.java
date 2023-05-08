@@ -15,15 +15,16 @@
  */
 
 package com.navercorp.pinpoint.profiler.context.active;
+
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.navercorp.pinpoint.common.trace.BaseHistogramSchema;
 import com.navercorp.pinpoint.common.trace.HistogramSchema;
 import com.navercorp.pinpoint.common.trace.HistogramSlot;
-import com.navercorp.pinpoint.profiler.context.id.TraceRoot;
+import com.navercorp.pinpoint.profiler.context.id.LocalTraceRoot;
 import com.navercorp.pinpoint.profiler.monitor.metric.response.ResponseTimeCollector;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,39 +82,20 @@ public class DefaultActiveTraceRepository implements ActiveTraceRepository {
         }
     }
 
-    @Override
-    public ActiveTraceHandle register(TraceRoot traceRoot) {
-        final ActiveTrace activeTrace = newSampledActiveTrace(traceRoot);
-        return register0(activeTrace);
-    }
 
-    private ActiveTrace newSampledActiveTrace(TraceRoot traceRoot) {
-        return new SampledActiveTrace(traceRoot);
-    }
 
     @Override
-    public ActiveTraceHandle register(long localTransactionId, long startTime, long threadId) {
-        final ActiveTrace activeTrace = newUnsampledActiveTrace(localTransactionId, startTime, threadId);
-        return register0(activeTrace);
-    }
-
-    private ActiveTrace newUnsampledActiveTrace(long localTransactionId, long startTime, long threadId) {
-        return new UnsampledActiveTrace(localTransactionId, startTime, threadId);
-    }
-
-    private ActiveTraceHandle register0(ActiveTrace activeTrace) {
+    public ActiveTraceHandle register(LocalTraceRoot localTraceRoot) {
         if (isDebug) {
-            logger.debug("register ActiveTrace key:{}", activeTrace);
+            logger.debug("register ActiveTrace key:{}", localTraceRoot);
         }
 
-        final long id = activeTrace.getId();
+        final long id = localTraceRoot.getLocalTransactionId();
+
         final ActiveTraceHandle handle = new DefaultActiveTraceHandle(id);
-        final ActiveTrace old = this.activeTraceInfoMap.put(handle, activeTrace);
-        if (old != null) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("old activeTrace exist:{}", old);
-            }
-        }
+
+        this.activeTraceInfoMap.computeIfAbsent(handle, activeTraceHandle -> new DefaultActiveTrace(localTraceRoot));
+
         return handle;
     }
 

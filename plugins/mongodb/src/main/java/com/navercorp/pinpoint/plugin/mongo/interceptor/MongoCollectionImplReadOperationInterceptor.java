@@ -45,21 +45,15 @@ public class MongoCollectionImplReadOperationInterceptor extends SpanEventSimple
     }
 
     @Override
-    protected void doInBeforeTrace(SpanEventRecorder recorder, Object target, Object[] args) {
+    public void doInBeforeTrace(SpanEventRecorder recorder, Object target, Object[] args) {
         recorder.recordApi(methodDescriptor);
 
         if (Boolean.FALSE == (target instanceof HostListAccessor)) {
-            if (isDebug) {
-                logger.debug("Unexpected target. The target is not a HostListAccessor implementation. target={}", target);
-            }
             return;
         }
 
         final List<String> hostList = ((HostListAccessor) target)._$PINPOINT$_getHostList();
         if (hostList == null) {
-            if (isDebug) {
-                logger.debug("Invalid hostList.");
-            }
             return;
         }
 
@@ -70,6 +64,7 @@ public class MongoCollectionImplReadOperationInterceptor extends SpanEventSimple
         recorder.recordServiceType(mongoDatabaseInfo.getExecuteQueryType());
         recorder.recordEndPoint(mongoDatabaseInfo.getMultipleHost());
         recorder.recordDestinationId(mongoDatabaseInfo.getDatabaseId());
+
         MongoUtil.recordMongoCollection(recorder, mongoDatabaseInfo.getCollectionName(), mongoDatabaseInfo.getReadPreference());
     }
 
@@ -90,7 +85,7 @@ public class MongoCollectionImplReadOperationInterceptor extends SpanEventSimple
             final AsyncContext asyncContext = recorder.recordNextAsyncContext();
             ((AsyncContextAccessor) (result))._$PINPOINT$_setAsyncContext(asyncContext);
             if (isDebug) {
-                logger.debug("Set AsyncContext {}, result={}", asyncContext, result);
+                logger.debug("Set asyncContext to result. asyncContext={}", asyncContext);
             }
         }
     }

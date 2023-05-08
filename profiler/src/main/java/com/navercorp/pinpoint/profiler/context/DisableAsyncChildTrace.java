@@ -21,57 +21,81 @@ import com.navercorp.pinpoint.bootstrap.context.SpanRecorder;
 import com.navercorp.pinpoint.bootstrap.context.Trace;
 import com.navercorp.pinpoint.bootstrap.context.TraceId;
 import com.navercorp.pinpoint.bootstrap.context.scope.TraceScope;
-import com.navercorp.pinpoint.profiler.context.id.TraceRoot;
+import com.navercorp.pinpoint.profiler.context.id.LocalTraceRoot;
 import com.navercorp.pinpoint.profiler.context.scope.DefaultTraceScopePool;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
 public class DisableAsyncChildTrace implements Trace {
     // private static final int ASYNC_BEGIN_STACK_ID = 1001;
     public static final String UNSUPPORTED_OPERATION = "disable async child trace";
+
+    protected final Logger logger = LogManager.getLogger(getClass());
+    protected final boolean isDebug = logger.isDebugEnabled();
+
     private boolean closed = false;
 
     private DefaultTraceScopePool scopePool;
 
-    private final TraceRoot traceRoot;
-    private final LocalAsyncId localAsyncId;
+    private final LocalTraceRoot traceRoot;
+    private int depth;
 
-    public DisableAsyncChildTrace(final TraceRoot traceRoot, final LocalAsyncId localAsyncId) {
+    private final SpanRecorder spanRecorder;
+    private final SpanEventRecorder spanEventRecorder;
+
+    public DisableAsyncChildTrace(final LocalTraceRoot traceRoot, SpanRecorder spanRecorder, SpanEventRecorder spanEventRecorder) {
         this.traceRoot = Objects.requireNonNull(traceRoot, "traceRoot");
-        this.localAsyncId = Objects.requireNonNull(localAsyncId, "localAsyncId");
+        this.spanRecorder = Objects.requireNonNull(spanRecorder, "spanRecorder");
+        this.spanEventRecorder = Objects.requireNonNull(spanEventRecorder, "spanEventRecorder");
     }
 
     @Override
     public SpanEventRecorder traceBlockBegin() {
-        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
+        return traceBlockBegin(DEFAULT_STACKID);
     }
 
     @Override
     public SpanEventRecorder traceBlockBegin(int stackId) {
-        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
+        push();
+        return getSpanEventRecorder();
     }
 
     @Override
     public void traceBlockEnd() {
-        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
+        traceBlockBegin(DEFAULT_STACKID);
     }
+
 
     @Override
     public void traceBlockEnd(int stackId) {
-        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
+        pop();
+    }
+
+    private SpanEventRecorder getSpanEventRecorder() {
+        return spanEventRecorder;
+    }
+
+    private int push() {
+        return this.depth++;
+    }
+
+    private void pop() {
+        this.depth--;
     }
 
     @Override
     public boolean isRootStack() {
-        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
+        return depth == 0;
     }
 
     @Override
     public int getCallStackFrameId() {
-        return 0;
+        return DEFAULT_STACKID;
     }
 
-    private TraceRoot getTraceRoot() {
+    private LocalTraceRoot getTraceRoot() {
         return this.traceRoot;
     }
 
@@ -82,12 +106,12 @@ public class DisableAsyncChildTrace implements Trace {
 
     @Override
     public long getStartTime() {
-        return getTraceRoot().getTraceStartTime();
+        return traceRoot.getTraceStartTime();
     }
 
     @Override
     public TraceId getTraceId() {
-        return getTraceRoot().getTraceId();
+        throw new UnsupportedOperationException(UNSUPPORTED_OPERATION);
     }
 
     @Override
@@ -97,7 +121,7 @@ public class DisableAsyncChildTrace implements Trace {
 
     @Override
     public boolean isRoot() {
-        return this.getTraceId().isRoot();
+        return false;
     }
 
     @Override
@@ -107,12 +131,12 @@ public class DisableAsyncChildTrace implements Trace {
 
     @Override
     public SpanRecorder getSpanRecorder() {
-        return null;
+        return spanRecorder;
     }
 
     @Override
     public SpanEventRecorder currentSpanEventRecorder() {
-        return null;
+        return spanEventRecorder;
     }
 
     @Override
@@ -123,6 +147,7 @@ public class DisableAsyncChildTrace implements Trace {
     @Override
     public void close() {
         if (closed) {
+            logger.debug("Already closed");
             return;
         }
         closed = true;
@@ -148,8 +173,7 @@ public class DisableAsyncChildTrace implements Trace {
     @Override
     public String toString() {
         return "DisableAsyncChildTrace{" +
-            "traceRoot=" + getTraceRoot() +
-            ", localAsyncId=" + localAsyncId +
-            '}';
+                "traceRoot=" + traceRoot +
+                '}';
     }
 }

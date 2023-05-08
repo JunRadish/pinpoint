@@ -30,6 +30,7 @@ import com.navercorp.pinpoint.metric.web.model.MetricValueGroup;
 import com.navercorp.pinpoint.metric.web.model.SystemMetricData;
 import com.navercorp.pinpoint.metric.web.model.basic.metric.group.GroupingRule;
 import com.navercorp.pinpoint.metric.web.model.chart.SystemMetricPoint;
+import com.navercorp.pinpoint.metric.web.util.TagUtils;
 import com.navercorp.pinpoint.metric.web.util.TimeWindow;
 import com.navercorp.pinpoint.metric.web.util.metric.DoubleUncollectedDataCreator;
 import com.navercorp.pinpoint.metric.web.util.metric.LongUncollectedDataCreator;
@@ -92,7 +93,6 @@ public class SystemMetricDataServiceImpl implements SystemMetricDataService {
         Metric elementOfBasicGroupList = systemMetricBasicGroupManager.findElementOfBasicGroup(metricDataSearchKey.getMetricDefinitionId());
 
         StopWatch watch = StopWatch.createStarted();
-        logger.info("=========== thread start {} thread. metricDefinitionId:{}", Thread.currentThread().getName(), metricDataSearchKey.getMetricDefinitionId());
         List<QueryResult<Number>> queryResults = selectAll(metricDataSearchKey, elementOfBasicGroupList, tags);
 
         List<MetricValue<?>> metricValueList = new ArrayList<>(elementOfBasicGroupList.getFields().size());
@@ -110,12 +110,10 @@ public class SystemMetricDataServiceImpl implements SystemMetricDataService {
                     StopWatch dataProcessWatch = StopWatch.createStarted();
                     MetricValue<Double> doubleMetricValue = createSystemMetricValue(timeWindow, result.getTag(), doubleList, DoubleUncollectedDataCreator.UNCOLLECTED_DATA_CREATOR);
                     dataProcessWatch.stop();
-                    logger.info("##### execute process data {} thread. processTime:{} metricDefinitionId:{}", Thread.currentThread().getName(), dataProcessWatch.getTime(), metricDataSearchKey.getMetricDefinitionId());
                     metricValueList.add(doubleMetricValue);
                 }
             }
 
-            logger.info("============ thread end {} thread. executeTime:{} metricDefinitionId:{}", Thread.currentThread().getName(), watch.getTime(), metricDataSearchKey.getMetricDefinitionId());
             watch.stop();
             return metricValueList;
         } catch (Throwable e) {
@@ -267,9 +265,7 @@ public class SystemMetricDataServiceImpl implements SystemMetricDataService {
                 return "groupWithNoTag";
             }
 
-            return tagList.stream()
-                    .map(Tag::toString)
-                    .collect(Collectors.joining(","));
+            return TagUtils.toTagString(tagList);
         }
 
         @Override

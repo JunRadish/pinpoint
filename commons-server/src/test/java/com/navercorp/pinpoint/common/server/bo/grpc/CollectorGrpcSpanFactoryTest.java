@@ -30,7 +30,6 @@ import com.navercorp.pinpoint.io.SpanVersion;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -41,6 +40,7 @@ public class CollectorGrpcSpanFactoryTest {
 
     private final GrpcSpanBinder binder = new GrpcSpanBinder();
     private final SpanEventFilter filter = new SequenceSpanEventFilter(MAX_SEQUENCE);
+
     private final AcceptedTimeService acceptedTimeService = new EmptyAcceptedTimeService(System.currentTimeMillis());
     private final GrpcSpanFactory factory = new CollectorGrpcSpanFactory(binder, filter, acceptedTimeService);
 
@@ -135,7 +135,7 @@ public class CollectorGrpcSpanFactoryTest {
     private PSpanChunk newSpanChunk(PSpanEvent... events) {
         PSpanChunk.Builder builder = PSpanChunk.newBuilder();
         builder.setVersion(SpanVersion.TRACE_V2);
-        builder.addAllSpanEvent(Arrays.asList(events));
+        builder.addAllSpanEvent(List.of(events));
         builder.setTransactionId(PTransactionId.getDefaultInstance());
         return builder.build();
     }

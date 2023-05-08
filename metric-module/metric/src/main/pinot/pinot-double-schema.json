@@ -32,12 +32,17 @@
       "dataType": "STRING",
       "singleValueField": false,
       "defaultNullValue": "null"
+    },
+    {
+      "name": "version",
+      "dataType": "STRING",
+      "defaultNullValue": ""
     }
   ],
   "metricFieldSpecs": [
     {
       "name": "fieldValue",
-      "dataType": "Double",
+      "dataType": "DOUBLE",
       "defaultNullValue": -1.0
     }
   ],

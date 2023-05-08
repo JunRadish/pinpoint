@@ -49,9 +49,6 @@ public class MongoClientConstructorInterceptor implements AroundInterceptor {
         }
 
         if (Boolean.FALSE == (target instanceof HostListAccessor)) {
-            if (isDebug) {
-                logger.debug("Unexpected target. The target is not a HostListAccessor implementation. target={}", target);
-            }
             return;
         }
 
@@ -64,7 +61,7 @@ public class MongoClientConstructorInterceptor implements AroundInterceptor {
                 hostList.add(hostAddress);
             } else {
                 // arg0 is List<ServerAddress>
-                final List list = ArrayArgumentUtils.getArgument(args, 0, List.class);
+                final List<?> list = ArrayArgumentUtils.getArgument(args, 0, List.class);
                 if (list != null) {
                     for (Object o : list) {
                         if (o instanceof ServerAddress) {

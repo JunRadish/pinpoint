@@ -30,7 +30,7 @@ import java.util.StringJoiner;
  */
 public class ArrayUtilsTest {
 
-    private final Logger logger = LogManager.getLogger(ArrayUtilsTest.class.getName());
+    private final Logger logger = LogManager.getLogger(ArrayUtilsTest.class);
 
     @Test
     public void abbreviateSmall() {
@@ -83,11 +83,9 @@ public class ArrayUtilsTest {
     public void abbreviateNegative() {
         byte[] bytes = new byte[]{1};
 
-        try {
+        Assertions.assertThrows(Exception.class, () -> {
             ArrayUtils.abbreviate(bytes, -1);
-            Assertions.fail();
-        } catch (Exception ignored) {
-        }
+        });
     }
 
     @Test

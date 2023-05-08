@@ -29,7 +29,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.util.SocketUtils;
+import org.springframework.test.util.TestSocketUtils;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -66,7 +66,7 @@ public class UDPReceiverTest {
 
     @BeforeEach
     public void setUp() throws Exception {
-        this.port = SocketUtils.findAvailableUdpPort(10999);
+        this.port = TestSocketUtils.findAvailableTcpPort();
     }
 
     @Test
@@ -85,7 +85,7 @@ public class UDPReceiverTest {
             receiver = new UDPReceiver("test", packetHandlerFactory, executor, 8, bindAddress, socketOptionApplier, pool);
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
-            Assertions.fail(e.getMessage());
+            Assertions.fail(e.getMessage(), e);
         } finally {
             if (receiver != null) {
                 receiver.shutdown();
@@ -160,7 +160,7 @@ public class UDPReceiverTest {
             Mockito.verify(mockExecutor).execute(any(Runnable.class));
         } catch (Exception e) {
             logger.debug(e.getMessage(), e);
-            Assertions.fail(e.getMessage());
+            Assertions.fail(e.getMessage(), e);
         } finally {
             if (receiver != null) {
                 receiver.shutdown();

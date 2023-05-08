@@ -45,18 +45,18 @@ public class DefaultGenericExecuteSpecStatementFunctionGetLambdaInterceptor impl
 
         final DatabaseInfo databaseInfo = DatabaseInfoAccessorUtils.getDatabaseInfo(args, 0);
         if (databaseInfo != null) {
-            DatabaseInfoAccessorUtils.setDatabaseInfo(databaseInfo, result);
+            DatabaseInfoAccessorUtils.setDatabaseInfo(databaseInfo, target);
         }
 
-        if (Boolean.FALSE == result instanceof AsyncContextAccessor) {
+        if (Boolean.FALSE == target instanceof AsyncContextAccessor) {
             return;
         }
 
         final AsyncContext asyncContext = AsyncContextAccessorUtils.getAsyncContext(args, 0);
         if (asyncContext != null) {
-            AsyncContextAccessorUtils.setAsyncContext(asyncContext, result);
+            AsyncContextAccessorUtils.setAsyncContext(asyncContext, target);
             if (isDebug) {
-                logger.debug("Set asyncContext to result. asyncContext={}", asyncContext);
+                logger.debug("Set asyncContext to target. asyncContext={}", asyncContext);
             }
         }
     }

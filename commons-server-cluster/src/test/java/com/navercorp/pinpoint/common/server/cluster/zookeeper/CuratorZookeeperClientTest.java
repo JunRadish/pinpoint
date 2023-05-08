@@ -18,7 +18,6 @@ package com.navercorp.pinpoint.common.server.cluster.zookeeper;
 
 import com.navercorp.pinpoint.common.server.cluster.zookeeper.exception.BadOperationException;
 import com.navercorp.pinpoint.common.server.cluster.zookeeper.exception.PinpointZookeeperException;
-import com.navercorp.pinpoint.testcase.util.SocketUtils;
 import org.apache.curator.test.TestingServer;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.logging.log4j.LogManager;
@@ -37,6 +36,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.test.util.TestSocketUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -68,7 +68,7 @@ public class CuratorZookeeperClientTest {
 
     @BeforeAll
     public static void setUpClass() throws Exception {
-        int availablePort = SocketUtils.findAvailableTcpPort();
+        int availablePort = TestSocketUtils.findAvailableTcpPort();
         ts = new TestingServer(availablePort);
 
         eventHoldingZookeeperEventWatcher = new EventHoldingZookeeperEventWatcher();
@@ -99,7 +99,7 @@ public class CuratorZookeeperClientTest {
             if (curatorZookeeperClient != null) {
                 curatorZookeeperClient.close();
             }
-        } catch (Exception e) {
+        } catch (Exception ignore) {
             // skip
         }
 
@@ -141,11 +141,9 @@ public class CuratorZookeeperClientTest {
             ZKPaths.PathAndNode pathAndNode = ZKPaths.getPathAndNode(testNodePath);
             String path = pathAndNode.getPath();
 
-            try {
+            Assertions.assertThrows(Exception.class, () -> {
                 curatorZookeeperClient.createOrSetNode(new CreateNodeMessage(testNodePath, message.getBytes()));
-                Assertions.fail();
-            } catch (Exception ignored) {
-            }
+            });
 
             boolean existNode = isExistNode(zooKeeper, path);
             Assertions.assertFalse(existNode);
@@ -165,7 +163,7 @@ public class CuratorZookeeperClientTest {
     }
 
     @Test
-    public void alreadyExistNodeCreateTest() throws Exception {
+    public void alreadyExistNodeCreateTest() {
         Assertions.assertThrows(BadOperationException.class, () -> {
             ZooKeeper zooKeeper = createZookeeper();
             try {

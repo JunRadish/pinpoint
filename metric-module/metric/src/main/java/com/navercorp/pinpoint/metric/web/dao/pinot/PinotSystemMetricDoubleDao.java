@@ -17,16 +17,15 @@
 package com.navercorp.pinpoint.metric.web.dao.pinot;
 
 import com.navercorp.pinpoint.metric.common.model.MetricTag;
-import com.navercorp.pinpoint.metric.common.pinot.PinotAsyncTemplate;
 import com.navercorp.pinpoint.metric.web.dao.SystemMetricDao;
 import com.navercorp.pinpoint.metric.web.dao.model.SystemMetricDataSearchKey;
 import com.navercorp.pinpoint.metric.web.model.MetricDataSearchKey;
 import com.navercorp.pinpoint.metric.web.model.chart.SystemMetricPoint;
+import com.navercorp.pinpoint.pinot.mybatis.PinotAsyncTemplate;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.mybatis.spring.SqlSessionTemplate;
-
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -48,20 +47,6 @@ public class PinotSystemMetricDoubleDao implements SystemMetricDao<Double> {
     public PinotSystemMetricDoubleDao(SqlSessionTemplate sqlPinotSessionTemplate, PinotAsyncTemplate asyncTemplate) {
         this.sqlPinotSessionTemplate = Objects.requireNonNull(sqlPinotSessionTemplate, "sqlPinotSessionTemplate");
         this.asyncTemplate = Objects.requireNonNull(asyncTemplate, "asyncTemplate");
-    }
-
-    @Override
-    @Deprecated
-    public List<SystemMetricPoint<Double>> getSampledSystemMetricData(MetricDataSearchKey metricDataSearchKey, MetricTag metricTag) {
-        StopWatch watch = StopWatch.createStarted();
-        logger.info("=========== thread start {} thread. tag:{}", Thread.currentThread().getName(), metricTag);
-
-        SystemMetricDataSearchKey systemMetricDataSearchKey = new SystemMetricDataSearchKey(metricDataSearchKey, metricTag);
-        List<SystemMetricPoint<Double>> result = sqlPinotSessionTemplate.selectList(NAMESPACE + "selectSampledSystemMetricData", systemMetricDataSearchKey);
-
-        watch.stop();
-        logger.info("============ thread end {} thread. executeTime:{} tag:{}", Thread.currentThread().getName(), watch.getTime(), metricTag);
-        return result;
     }
 
     @Override

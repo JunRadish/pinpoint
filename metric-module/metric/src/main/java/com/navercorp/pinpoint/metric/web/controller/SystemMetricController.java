@@ -17,7 +17,6 @@
 package com.navercorp.pinpoint.metric.web.controller;
 
 import com.navercorp.pinpoint.metric.common.model.Tag;
-import com.navercorp.pinpoint.metric.common.pinot.TenantProvider;
 import com.navercorp.pinpoint.metric.web.model.MetricDataSearchKey;
 import com.navercorp.pinpoint.metric.web.model.MetricInfo;
 import com.navercorp.pinpoint.metric.web.model.SystemMetricData;
@@ -25,11 +24,12 @@ import com.navercorp.pinpoint.metric.web.service.SystemMetricDataService;
 import com.navercorp.pinpoint.metric.web.service.SystemMetricHostInfoService;
 import com.navercorp.pinpoint.metric.web.service.YMLSystemMetricBasicGroupManager;
 import com.navercorp.pinpoint.metric.web.util.Range;
-import com.navercorp.pinpoint.metric.web.util.TagParser;
+import com.navercorp.pinpoint.metric.web.util.TagUtils;
 import com.navercorp.pinpoint.metric.web.util.TimeWindow;
 import com.navercorp.pinpoint.metric.web.util.TimeWindowSampler;
 import com.navercorp.pinpoint.metric.web.util.TimeWindowSlotCentricSampler;
 import com.navercorp.pinpoint.metric.web.view.SystemMetricView;
+import com.navercorp.pinpoint.pinot.tenant.TenantProvider;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -50,10 +50,11 @@ public class SystemMetricController {
     private final TenantProvider tenantProvider;
 
     private final TimeWindowSampler DEFAULT_TIME_WINDOW_SAMPLER = new TimeWindowSlotCentricSampler(10000L, 200);
-
-    private final TagParser tagParser = new TagParser();
-
-    public SystemMetricController(SystemMetricDataService systemMetricDataService, SystemMetricHostInfoService systemMetricHostInfoService, YMLSystemMetricBasicGroupManager systemMetricBasicGroupManager, TenantProvider tenantProvider) {
+    
+    public SystemMetricController(SystemMetricDataService systemMetricDataService,
+                                  SystemMetricHostInfoService systemMetricHostInfoService,
+                                  YMLSystemMetricBasicGroupManager systemMetricBasicGroupManager,
+                                  TenantProvider tenantProvider) {
         this.systemMetricDataService = Objects.requireNonNull(systemMetricDataService, "systemMetricService");
         this.systemMetricHostInfoService = Objects.requireNonNull(systemMetricHostInfoService, "systemMetricHostInfoService");
         this.systemMetricBasicGroupManager = Objects.requireNonNull(systemMetricBasicGroupManager, "systemMetricBasicGroupManager");
@@ -96,7 +97,7 @@ public class SystemMetricController {
         String tenantId = tenantProvider.getTenantId();
         TimeWindow timeWindow = new TimeWindow(Range.newRange(from, to), DEFAULT_TIME_WINDOW_SAMPLER);
         MetricDataSearchKey metricDataSearchKey = new MetricDataSearchKey(tenantId, hostGroupName, hostName, systemMetricBasicGroupManager.findMetricName(metricDefinitionId), metricDefinitionId, timeWindow);
-        List<Tag> tagList = tagParser.parseTags(tags);
+        List<Tag> tagList = TagUtils.parseTags(tags);
 
         SystemMetricData<? extends Number> systemMetricData = systemMetricDataService.getCollectedMetricData(metricDataSearchKey, timeWindow, tagList);
         return new SystemMetricView(systemMetricData);

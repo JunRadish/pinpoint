@@ -27,6 +27,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author emeroad
  */
@@ -41,7 +43,7 @@ public class AutomaticBufferTest {
         Buffer buffer = new AutomaticBuffer(0);
         buffer.putInt(1);
         byte[] buf = buffer.getBuffer();
-        Assertions.assertEquals(buf.length, 4);
+        assertThat(buf).hasSize(4);
         Assertions.assertEquals(1, BytesUtils.bytesToInt(buf, 0));
     }
 
@@ -58,7 +60,7 @@ public class AutomaticBufferTest {
         buffer.putPadBytes(test, TOTAL_LENGTH);
 
         byte[] result = buffer.getBuffer();
-        Assertions.assertEquals(result.length, TOTAL_LENGTH);
+        assertThat(result).hasSize(TOTAL_LENGTH);
         Assertions.assertArrayEquals(Arrays.copyOfRange(test, 0, TEST_SIZE), Arrays.copyOfRange(result, 0, TEST_SIZE), "check data");
         byte[] padBytes = new byte[TOTAL_LENGTH - TEST_SIZE];
         Assertions.assertArrayEquals(Arrays.copyOfRange(padBytes, 0, TEST_SIZE), Arrays.copyOfRange(result, TEST_SIZE, TOTAL_LENGTH), "check pad");
@@ -69,18 +71,14 @@ public class AutomaticBufferTest {
     public void testPadBytes_Error() {
 
         Buffer buffer1_1 = new AutomaticBuffer(32);
-        try {
+        Assertions.assertThrowsExactly(IndexOutOfBoundsException.class, () -> {
             buffer1_1.putPadBytes(new byte[11], 10);
-            Assertions.fail("error");
-        } catch (IndexOutOfBoundsException ignored) {
-        }
+        });
 
         Buffer buffer1_2 = new AutomaticBuffer(32);
-        try {
+        Assertions.assertThrowsExactly(IndexOutOfBoundsException.class, () -> {
             buffer1_2.putPadBytes(new byte[20], 10);
-            Assertions.fail("error");
-        } catch (IndexOutOfBoundsException ignored) {
-        }
+        });
 
         Buffer buffer2 = new AutomaticBuffer(32);
         buffer2.putPadBytes(new byte[10], 10);
@@ -104,7 +102,7 @@ public class AutomaticBufferTest {
         byte[] result = buffer.getBuffer();
         String decodedString = new String(result);
         String trimString = decodedString.trim();
-        Assertions.assertEquals(result.length, TOTAL_LENGTH);
+        assertThat(result).hasSize(TOTAL_LENGTH);
 
         Assertions.assertEquals(test, trimString, "check data");
 
@@ -118,18 +116,14 @@ public class AutomaticBufferTest {
     public void testPadString_Error() {
 
         Buffer buffer1_1 = new AutomaticBuffer(32);
-        try {
+        Assertions.assertThrowsExactly(IndexOutOfBoundsException.class, () -> {
             buffer1_1.putPadString(StringUtils.repeat("a", 11), 10);
-            Assertions.fail("error");
-        } catch (IndexOutOfBoundsException ignored) {
-        }
+        });
 
         Buffer buffer1_2 = new AutomaticBuffer(32);
-        try {
+        Assertions.assertThrowsExactly(IndexOutOfBoundsException.class, () -> {
             buffer1_2.putPadString(StringUtils.repeat("a", 20), 10);
-            Assertions.fail("error");
-        } catch (Exception ignored) {
-        }
+        });
 
         Buffer buffer2 = new AutomaticBuffer(32);
         buffer2.putPadString(StringUtils.repeat("a", 10), 10);
@@ -151,12 +145,10 @@ public class AutomaticBufferTest {
 
         checkPut2PrefixedBytes(null);
 
-        try {
+        Assertions.assertThrowsExactly(IndexOutOfBoundsException.class, () -> {
             byte[] bytes4 = new byte[Short.MAX_VALUE + 1];
             checkPut2PrefixedBytes(bytes4);
-            Assertions.fail("too large bytes");
-        } catch (IndexOutOfBoundsException ignored) {
-        }
+        });
     }
 
     private void checkPut2PrefixedBytes(byte[] bytes) {
@@ -164,7 +156,7 @@ public class AutomaticBufferTest {
         buffer.put2PrefixedBytes(bytes);
 
         Buffer copy = new FixedBuffer(buffer.getBuffer());
-        Assertions.assertArrayEquals(bytes, copy.read2PrefixedBytes());
+        assertThat(bytes).isEqualTo(copy.read2PrefixedBytes());
     }
 
     @Test
@@ -184,7 +176,7 @@ public class AutomaticBufferTest {
         buffer.put4PrefixedBytes(bytes);
 
         Buffer copy = new FixedBuffer(buffer.getBuffer());
-        Assertions.assertArrayEquals(bytes, copy.read4PrefixedBytes());
+        assertThat(bytes).isEqualTo(copy.read4PrefixedBytes());
     }
 
     @Test
@@ -192,7 +184,7 @@ public class AutomaticBufferTest {
         Buffer buffer = new AutomaticBuffer(1);
         buffer.putPrefixedString(null);
         byte[] internalBuffer = buffer.getInternalBuffer();
-        Assertions.assertEquals(1, internalBuffer.length);
+        assertThat(internalBuffer).hasSize(1);
     }
 
 
@@ -332,17 +324,17 @@ public class AutomaticBufferTest {
 
         buffer.putBytes(new byte[8]);
         logger.debug("bufferSize:{} offset:{}", buffer.getInternalBuffer().length, buffer.getOffset());
-        Assertions.assertEquals(buffer.getInternalBuffer().length, 8);
+        assertThat(buffer.getInternalBuffer()).hasSize(8);
 
         buffer.putBytes(new byte[8]);
 
         logger.debug("bufferSize:{} offset:{}", buffer.getInternalBuffer().length, buffer.getOffset());
-        Assertions.assertEquals(buffer.getInternalBuffer().length, 16);
+        assertThat(buffer.getInternalBuffer()).hasSize(16);
 
 
         buffer.putBytes(new byte[8]);
         logger.debug("bufferSize:{} offset:{}", buffer.getInternalBuffer().length, buffer.getOffset());
-        Assertions.assertEquals(buffer.getInternalBuffer().length, 32);
+        assertThat(buffer.getInternalBuffer()).hasSize(32);
     }
 
     @Test
@@ -353,12 +345,12 @@ public class AutomaticBufferTest {
         buffer.putBytes(new byte[5 * 4]);
 
         logger.debug("bufferSize:{} offset:{}", buffer.getInternalBuffer().length, buffer.getOffset());
-        Assertions.assertEquals(buffer.getInternalBuffer().length, 32);
+        assertThat(buffer.getInternalBuffer()).hasSize(32);
 
         buffer.putBytes(new byte[8 * 4]);
 
         logger.debug("bufferSize:{} offset:{}", buffer.getInternalBuffer().length, buffer.getOffset());
-        Assertions.assertEquals(buffer.getInternalBuffer().length, 64);
+        assertThat(buffer.getInternalBuffer()).hasSize(64);
 
 
     }

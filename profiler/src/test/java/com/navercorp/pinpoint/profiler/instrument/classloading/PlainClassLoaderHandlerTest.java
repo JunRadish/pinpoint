@@ -37,14 +37,9 @@ public class PlainClassLoaderHandlerTest {
         PluginConfig pluginConfig = newPluginConfig();
 
         ClassInjector plainClassLoaderHandler = new PlainClassLoaderHandler(pluginConfig);
-        try {
+        Assertions.assertThrows(Exception.class, () -> {
             plainClassLoaderHandler.injectClass(this.getClass().getClassLoader(), "com.navercorp.pinpoint.bootstrap.Test");
-            Assertions.fail();
-        } catch (NullPointerException e) {
-            Assertions.fail();
-        } catch (Exception e) {
-
-        }
+        });
     }
 
 //    @Test
@@ -63,11 +58,11 @@ public class PlainClassLoaderHandlerTest {
 
         ClassNameFilter filter = new ClassNameFilter() {
             @Override
-            public boolean accept(String className) {
+            public boolean accept(String className, ClassLoader classLoader) {
                 return ClassNameFilter.ACCEPT;
             }
         };
-        PluginConfig pluginConfig = new PluginConfig(plugin, filter);
+        PluginConfig pluginConfig = new PluginConfig(plugin, filter, filter);
         return pluginConfig;
     }
 }

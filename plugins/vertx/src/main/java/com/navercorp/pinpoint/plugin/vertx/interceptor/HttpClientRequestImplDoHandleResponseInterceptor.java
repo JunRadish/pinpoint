@@ -32,7 +32,7 @@ import io.vertx.core.http.impl.HttpClientResponseImpl;
  */
 public class HttpClientRequestImplDoHandleResponseInterceptor extends AsyncContextSpanEventSimpleAroundInterceptor {
 
-    private boolean statusCode;
+    private final boolean statusCode;
 
     public HttpClientRequestImplDoHandleResponseInterceptor(TraceContext traceContext, MethodDescriptor methodDescriptor) {
         super(traceContext, methodDescriptor);
@@ -58,16 +58,10 @@ public class HttpClientRequestImplDoHandleResponseInterceptor extends AsyncConte
     private boolean validate(final Object[] args) {
         Object httpClientResponseImpl = ArrayUtils.get(args, 0);
         if (!(httpClientResponseImpl instanceof HttpClientResponseImpl)) {
-            if (isDebug) {
-                logger.debug("Invalid args[0] object. args={}.", args);
-            }
             return false;
         }
 
         if (!(httpClientResponseImpl instanceof AsyncContextAccessor)) {
-            if (isDebug) {
-                logger.debug("Invalid args[0] object. Need metadata accessor({}).", AsyncContextAccessor.class.getName());
-            }
             return false;
         }
 

@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 /**
  * @author poap
  */
@@ -71,24 +73,18 @@ public class StringUtilsTest {
         Assertions.assertEquals(StringUtils.abbreviate(longString), "This is a very long string for testing drop function. Length of ...(100)");
         Assertions.assertEquals(StringUtils.abbreviate(longString, 4), "This...(100)");
         Assertions.assertEquals(StringUtils.abbreviate(longString, 0), "...(100)");
-        try {
+
+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> {
             StringUtils.abbreviate(longString, -4);
-            Assertions.fail();
-        } catch (IllegalArgumentException ignored) {
-        } catch (Exception e) {
-            Assertions.fail();
-        }
+        });
 
         Assertions.assertEquals(StringUtils.abbreviate(shortString), shortString);
         Assertions.assertEquals(StringUtils.abbreviate(shortString, 4), "This...(22)");
         Assertions.assertEquals(StringUtils.abbreviate(shortString, 0), "...(22)");
-        try {
+
+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> {
             StringUtils.abbreviate(shortString, -4);
-            Assertions.fail();
-        } catch (IllegalArgumentException ignored) {
-        } catch (Exception e) {
-            Assertions.fail();
-        }
+        });
     }
 
     @Test
@@ -186,8 +182,7 @@ public class StringUtilsTest {
     public void testTokenizeToStringList_nullValue() {
 
         List<String> tokenList = StringUtils.tokenizeToStringList(null, ",");
-        Assertions.assertEquals(tokenList.size(), 0);
-
+        assertThat(tokenList).isEmpty();
     }
 
 

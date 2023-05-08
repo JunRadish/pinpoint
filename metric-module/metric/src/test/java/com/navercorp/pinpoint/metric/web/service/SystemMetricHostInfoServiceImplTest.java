@@ -3,11 +3,12 @@ package com.navercorp.pinpoint.metric.web.service;
 import com.navercorp.pinpoint.metric.common.model.Tag;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author minwoo.jung
@@ -17,16 +18,12 @@ public class SystemMetricHostInfoServiceImplTest {
 
     @Test
     public void test() {
-        List<Tag> tagList = new ArrayList<>();
-        tagList.add(new Tag("key", "value"));
+        List<Tag> tagList = List.of(
+                new Tag("key", "value")
+        );
 
         List<Tag> comparedTagList = new ArrayList<>();
 
-        if (tagList.containsAll(comparedTagList)) {
-            logger.debug("success");
-        } else {
-            Assertions.fail();
-        }
-
+        assertThat(tagList).containsAll(comparedTagList);
     }
 }

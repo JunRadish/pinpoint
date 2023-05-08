@@ -22,7 +22,7 @@ import com.navercorp.pinpoint.rpc.client.SimpleMessageListener;
 import com.navercorp.pinpoint.test.client.TestPinpointClient;
 import com.navercorp.pinpoint.web.cluster.connection.ClusterConnectionManager;
 import com.navercorp.pinpoint.web.cluster.zookeeper.ZookeeperClusterDataManager;
-import com.navercorp.pinpoint.web.config.WebClusterConfig;
+import com.navercorp.pinpoint.web.config.WebClusterProperties;
 import org.apache.curator.test.TestingServer;
 import org.apache.curator.utils.ZKPaths;
 import org.apache.logging.log4j.LogManager;
@@ -38,7 +38,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.SocketUtils;
+import org.springframework.test.util.TestSocketUtils;
 
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -46,9 +46,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author Taejin Koo
@@ -82,33 +82,33 @@ public class ClusterTest {
 
     @BeforeAll
     public static void setUp() throws Exception {
-        int zookeeperPort = SocketUtils.findAvailableTcpPort(28000);
+        int zookeeperPort = TestSocketUtils.findAvailableTcpPort();
         zookeeperAddress = DEFAULT_IP + ":" + zookeeperPort;
         ts = createZookeeperServer(zookeeperPort);
 
-        WebClusterConfig config = mock(WebClusterConfig.class);
-        when(config.isClusterEnable()).thenReturn(true);
-        when(config.getHostAddress()).thenReturn(DEFAULT_IP);
-        when(config.getClusterZookeeperAddress()).thenReturn(zookeeperAddress);
-        when(config.getClusterZookeeperRetryInterval()).thenReturn(60000);
-        when(config.getClusterZookeeperSessionTimeout()).thenReturn(3000);
-        when(config.getWebZNodePath()).
+        WebClusterProperties properties = mock(WebClusterProperties.class);
+        when(properties.isClusterEnable()).thenReturn(true);
+        when(properties.getHostAddress()).thenReturn(DEFAULT_IP);
+        when(properties.getClusterZookeeperAddress()).thenReturn(zookeeperAddress);
+        when(properties.getClusterZookeeperRetryInterval()).thenReturn(60000);
+        when(properties.getClusterZookeeperSessionTimeout()).thenReturn(3000);
+        when(properties.getWebZNodePath()).
                 thenReturn(ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.WEB_LEAF_PATH));
-        when(config.getCollectorZNodePath()).
+        when(properties.getCollectorZNodePath()).
                 thenReturn(ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.COLLECTOR_LEAF_PATH));
 
-        acceptorPort = SocketUtils.findAvailableTcpPort(zookeeperPort);
+        acceptorPort = TestSocketUtils.findAvailableTcpPort();
         String acceptorAddress = DEFAULT_IP + ":" + acceptorPort;
-        when(config.getClusterTcpPort()).thenReturn(acceptorPort);
+        when(properties.getClusterTcpPort()).thenReturn(acceptorPort);
 
         CLUSTER_NODE_PATH
                 = ZKPaths.makePath(ZookeeperConstants.DEFAULT_CLUSTER_ZNODE_ROOT_PATH, ZookeeperConstants.WEB_LEAF_PATH, acceptorAddress);
         LOGGER.debug("CLUSTER_NODE_PATH:{}", CLUSTER_NODE_PATH);
 
-        clusterConnectionManager = new ClusterConnectionManager(config);
+        clusterConnectionManager = new ClusterConnectionManager(properties);
         clusterConnectionManager.start();
 
-        clusterDataManager = new ZookeeperClusterDataManager(config);
+        clusterDataManager = new ZookeeperClusterDataManager(properties);
         clusterDataManager.start();
 
         List<String> localV4IpList = NetUtils.getLocalV4IpList();
@@ -222,12 +222,12 @@ public class ClusterTest {
             });
             awaitZookeeperConnected(zookeeper);
 
-            Assertions.assertEquals(0, clusterConnectionManager.getClusterList().size());
+            assertThat(clusterConnectionManager.getClusterList()).isEmpty();
 
             testPinpointClient.connect(DEFAULT_IP, acceptorPort);
             awaitPinpointClientConnected(clusterConnectionManager);
 
-            Assertions.assertEquals(1, clusterConnectionManager.getClusterList().size());
+            assertThat(clusterConnectionManager.getClusterList()).hasSize(1);
         } finally {
             testPinpointClient.closeAll();
             if (zookeeper != null) {
@@ -259,10 +259,10 @@ public class ClusterTest {
 
         List<String> ipList = NetUtils.getLocalV4IpList();
 
-        Assertions.assertEquals(registeredIpList.length, ipList.size());
+        assertThat(ipList).hasSize(registeredIpList.length);
 
         for (String ip : registeredIpList) {
-            Assertions.assertTrue(ipList.contains(ip));
+            assertThat(ipList).contains(ip);
         }
     }
 

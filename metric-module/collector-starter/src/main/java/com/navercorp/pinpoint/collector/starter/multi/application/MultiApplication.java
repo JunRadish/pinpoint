@@ -10,18 +10,24 @@ import com.navercorp.pinpoint.metric.collector.CollectorType;
 import com.navercorp.pinpoint.metric.collector.CollectorTypeParser;
 import com.navercorp.pinpoint.metric.collector.MetricCollectorApp;
 import com.navercorp.pinpoint.metric.collector.TypeSet;
+import com.navercorp.pinpoint.uristat.collector.UriStatCollectorConfig;
 import org.springframework.boot.Banner;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
 import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.Arrays;
 
 @SpringBootConfiguration
-@EnableAutoConfiguration(exclude = {DataSourceAutoConfiguration.class, TransactionAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+        DataSourceAutoConfiguration.class,
+        DataSourceTransactionManagerAutoConfiguration.class,
+        TransactionAutoConfiguration.class
+})
 public class MultiApplication {
     private static final ServerBootLogger logger = ServerBootLogger.getLogger(MultiApplication.class);
 
@@ -43,20 +49,22 @@ public class MultiApplication {
 
         if (types.hasType(CollectorType.BASIC)) {
             logger.info(String.format("Start %s collector", CollectorType.BASIC));
-            SpringApplicationBuilder collectorAppBuilder = createAppBuilder(builder, BasicCollectorApp.class, 15400);
+            SpringApplicationBuilder collectorAppBuilder = createAppBuilder(builder, 15400, BasicCollectorApp.class, UriStatCollectorConfig.class);
+            collectorAppBuilder.listeners(new AdditionalProfileListener("metric"));
+            collectorAppBuilder.listeners(new AdditionalProfileListener("uri"));
             collectorAppBuilder.build().run(args);
         }
 
         if (types.hasType(CollectorType.METRIC)) {
             logger.info(String.format("Start %s collector", CollectorType.METRIC));
-            SpringApplicationBuilder metricAppBuilder = createAppBuilder(builder, MetricCollectorApp.class, 15200);
+            SpringApplicationBuilder metricAppBuilder = createAppBuilder(builder, 15200, MetricCollectorApp.class);
             metricAppBuilder.listeners(new AdditionalProfileListener("metric"));
             metricAppBuilder.build().run(args);
         }
     }
 
 
-    private static SpringApplicationBuilder createAppBuilder(SpringApplicationBuilder builder, Class<?> appClass, int port) {
+    private static SpringApplicationBuilder createAppBuilder(SpringApplicationBuilder builder, int port, Class<?>... appClass) {
         SpringApplicationBuilder appBuilder = builder.child(appClass)
                 .web(WebApplicationType.SERVLET)
                 .bannerMode(Banner.Mode.OFF)

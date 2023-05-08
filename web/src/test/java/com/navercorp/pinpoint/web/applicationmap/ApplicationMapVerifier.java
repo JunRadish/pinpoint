@@ -19,17 +19,19 @@ package com.navercorp.pinpoint.web.applicationmap;
 import com.navercorp.pinpoint.web.applicationmap.histogram.Histogram;
 import com.navercorp.pinpoint.web.applicationmap.histogram.NodeHistogram;
 import com.navercorp.pinpoint.web.applicationmap.link.Link;
+import com.navercorp.pinpoint.web.applicationmap.link.LinkKey;
 import com.navercorp.pinpoint.web.applicationmap.nodes.Node;
 import com.navercorp.pinpoint.web.applicationmap.nodes.ServerGroup;
-import com.navercorp.pinpoint.web.applicationmap.nodes.ServerInstance;
 import com.navercorp.pinpoint.web.applicationmap.nodes.ServerGroupList;
-import com.navercorp.pinpoint.web.vo.LinkKey;
+import com.navercorp.pinpoint.web.applicationmap.nodes.ServerInstance;
+import com.navercorp.pinpoint.web.vo.Application;
 import org.junit.jupiter.api.Assertions;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * @author HyunGil Jeong
@@ -51,7 +53,7 @@ public class ApplicationMapVerifier {
         Collection<Node> thisNodes = applicationMap.getNodes();
         verifySize(thisNodes, otherNodes);
         for (Node otherNode : otherNodes) {
-            String nodeNameToFind = otherNode.getNodeName();
+            Application nodeNameToFind = otherNode.getApplication();
             Node thisNode = findNode(thisNodes, nodeNameToFind);
             if (thisNode == null) {
                 Assertions.fail(otherNode + " not in " + thisNodes);
@@ -60,9 +62,9 @@ public class ApplicationMapVerifier {
         }
     }
 
-    private Node findNode(Collection<Node> nodes, String nodeNameToFind) {
+    private Node findNode(Collection<Node> nodes, Application nodeNameToFind) {
         for (Node node : nodes) {
-            String nodeName = node.getNodeName();
+            Application nodeName = node.getApplication();
             if (nodeName.equals(nodeNameToFind)) {
                 return node;
             }
@@ -92,7 +94,8 @@ public class ApplicationMapVerifier {
 
         List<ServerGroup> serverGroup1 = serverGroupList1.getServerGroupList();
         List<ServerGroup> serverGroup2 = serverGroupList2.getServerGroupList();
-        Assertions.assertEquals(serverGroup1.size(), serverGroup2.size());
+
+        assertThat(serverGroup1).hasSameSizeAs(serverGroup2);
         for (ServerGroup serverGroup : serverGroup1) {
             String hostName = serverGroup.getHostName();
             List<ServerInstance> serverInstances1 = serverGroup.getInstanceList();
@@ -100,8 +103,9 @@ public class ApplicationMapVerifier {
                     .filter(group -> group.getHostName().equals(hostName))
                     .findFirst().orElseThrow().getInstanceList();
             Assertions.assertNotNull(serverInstances2);
-            Assertions.assertTrue(serverInstances1.containsAll(serverInstances2));
-            Assertions.assertEquals(serverInstances1.size(), serverInstances2.size());
+            assertThat(serverInstances1)
+                    .containsAll(serverInstances2)
+                    .hasSameSizeAs(serverInstances2);
         }
     }
 
@@ -177,7 +181,7 @@ public class ApplicationMapVerifier {
     }
 
     private <T> void verifySize(Collection<T> collection1, Collection<T> collection2) {
-        Assertions.assertEquals(new ArrayList<>(collection1).size(), new ArrayList<>(collection2).size());
+        assertThat(collection1).hasSameSizeAs(collection2);
     }
 
     private <T> void verifyNullable(T nullable1, T nullable2) {

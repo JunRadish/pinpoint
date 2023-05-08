@@ -32,7 +32,9 @@ import com.navercorp.pinpoint.bootstrap.interceptor.annotation.TargetMethods;
 import com.navercorp.pinpoint.bootstrap.interceptor.scope.ExecutionPolicy;
 import com.navercorp.pinpoint.bootstrap.interceptor.scope.InterceptorScope;
 import com.navercorp.pinpoint.bootstrap.plugin.ObjectFactory;
+
 import java.util.Objects;
+
 import com.navercorp.pinpoint.common.util.JvmUtils;
 import com.navercorp.pinpoint.common.util.JvmVersion;
 import com.navercorp.pinpoint.exception.PinpointException;
@@ -67,8 +69,9 @@ public class ASMClass implements InstrumentClass {
     private boolean modified = false;
     private String name;
 
-    public ASMClass(EngineComponent engineComponent, final InstrumentContext pluginContext, final ClassLoader classLoader, ProtectionDomain protectionDomain, final ClassNode classNode) {
-        this(engineComponent, pluginContext, new ASMClassNodeAdapter(pluginContext, classLoader, protectionDomain, classNode));
+    public static ASMClass load(EngineComponent engineComponent, final InstrumentContext pluginContext, final ClassLoader classLoader, ProtectionDomain protectionDomain, final ClassNode classNode) {
+        ASMClassNodeAdapter classNodeAdapter = new ASMClassNodeAdapter(pluginContext, classLoader, protectionDomain, classNode);
+        return new ASMClass(engineComponent, pluginContext, classNodeAdapter);
     }
 
     public ASMClass(EngineComponent engineComponent, final InstrumentContext pluginContext, final ASMClassNodeAdapter classNode) {
@@ -135,6 +138,7 @@ public class ASMClass implements InstrumentClass {
     }
 
     @Override
+    @Deprecated
     public InstrumentMethod getLambdaMethod(String... parameterTypes) {
         return getDeclaredMethod("get$Lambda", parameterTypes);
     }
@@ -363,7 +367,6 @@ public class ASMClass implements InstrumentClass {
             throw new InstrumentException(interceptorClassName + " not found Caused by:" + ex.getMessage(), ex);
         }
     }
-
 
 
     private int addInterceptor0(Class<? extends Interceptor> interceptorClass, Object[] constructorArgs, InterceptorScope scope, ExecutionPolicy executionPolicy) throws InstrumentException {

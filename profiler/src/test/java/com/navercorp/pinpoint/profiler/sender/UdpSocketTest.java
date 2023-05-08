@@ -38,7 +38,7 @@ import java.net.SocketException;
 @Disabled
 public class UdpSocketTest {
 
-    private final Logger logger = LogManager.getLogger(this.getClass().getName());
+    private final Logger logger = LogManager.getLogger(this.getClass());
 
     // port conflict against base port. so increased 5
     private int PORT = SocketUtils.findAvailableUdpPort(61112);
@@ -92,11 +92,9 @@ public class UdpSocketTest {
     public void testDatagramSendFail() {
         int size = 70000;
         DatagramPacket packet1 = newDatagramPacket(size);
-        try {
+        Assertions.assertThrowsExactly(IOException.class, () -> {
             sender.send(packet1);
-            Assertions.fail("expected fail, but succeed");
-        } catch (IOException ignored) {
-        }
+        });
     }
 
     @Test

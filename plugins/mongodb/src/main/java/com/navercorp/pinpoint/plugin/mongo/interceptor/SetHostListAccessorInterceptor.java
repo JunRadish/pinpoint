@@ -51,24 +51,15 @@ public class SetHostListAccessorInterceptor implements AroundInterceptor {
         }
 
         if (Boolean.FALSE == (target instanceof HostListAccessor)) {
-            if (isDebug) {
-                logger.debug("Unexpected target. The target is not a HostListAccessor implementation. target={}", target);
-            }
             return;
         }
 
         final List<String> hostList = ((HostListAccessor) target)._$PINPOINT$_getHostList();
         if (hostList == null) {
-            if (isDebug) {
-                logger.debug("Invalid hostList. target={}", target);
-            }
             return;
         }
 
         if (Boolean.FALSE == (result instanceof HostListAccessor)) {
-            if (isDebug) {
-                logger.debug("Unexpected result. The result is not a HostListAccessor implementation. result={}", result);
-            }
             return;
         }
 

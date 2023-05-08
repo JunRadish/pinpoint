@@ -22,7 +22,6 @@ import com.navercorp.pinpoint.bootstrap.context.Trace;
 import com.navercorp.pinpoint.bootstrap.context.TraceId;
 import com.navercorp.pinpoint.bootstrap.context.scope.TraceScope;
 import com.navercorp.pinpoint.common.annotations.VisibleForTesting;
-import com.navercorp.pinpoint.common.util.Assert;
 import com.navercorp.pinpoint.exception.PinpointException;
 import com.navercorp.pinpoint.profiler.context.id.TraceRoot;
 import com.navercorp.pinpoint.profiler.context.recorder.WrappedSpanEventRecorder;
@@ -37,8 +36,9 @@ public class AsyncChildTrace implements Trace {
 
     private static final int ASYNC_BEGIN_STACK_ID = 1001;
 
-    private static final Logger logger = LogManager.getLogger(AsyncChildTrace.class.getName());
-    private static final boolean isDebug = logger.isDebugEnabled();
+    protected final Logger logger = LogManager.getLogger(getClass());
+    protected final boolean isDebug = logger.isDebugEnabled();
+
     private final CallStack<SpanEvent> callStack;
 
     private final Storage storage;
@@ -53,13 +53,12 @@ public class AsyncChildTrace implements Trace {
     private final TraceRoot traceRoot;
     private final LocalAsyncId localAsyncId;
 
-    public AsyncChildTrace(final TraceRoot traceRoot, CallStack<SpanEvent> callStack, Storage storage, boolean sampling,
-                             SpanRecorder spanRecorder, WrappedSpanEventRecorder wrappedSpanEventRecorder, final LocalAsyncId localAsyncId) {
+    public AsyncChildTrace(final TraceRoot traceRoot, CallStack<SpanEvent> callStack, Storage storage,
+                           SpanRecorder spanRecorder, WrappedSpanEventRecorder wrappedSpanEventRecorder, final LocalAsyncId localAsyncId) {
 
         this.traceRoot = Objects.requireNonNull(traceRoot, "traceRoot");
         this.callStack = Objects.requireNonNull(callStack, "callStack");
         this.storage = Objects.requireNonNull(storage, "storage");
-        Assert.isTrue(sampling, "sampling must be true");
 
         this.spanRecorder = Objects.requireNonNull(spanRecorder, "spanRecorder");
         this.wrappedSpanEventRecorder = Objects.requireNonNull(wrappedSpanEventRecorder, "wrappedSpanEventRecorder");
@@ -95,8 +94,7 @@ public class AsyncChildTrace implements Trace {
             if (logger.isWarnEnabled()) {
                 stackDump("already closed trace");
             }
-            final SpanEvent dummy = dummySpanEvent();
-            return dummy;
+            return dummySpanEvent();
         }
         // Set properties for the case when stackFrame is not used as part of Span.
         final SpanEvent spanEvent = newSpanEvent(stackId);
@@ -106,7 +104,7 @@ public class AsyncChildTrace implements Trace {
 
     private void stackDump(String caused) {
         PinpointException exception = new PinpointException(caused);
-        logger.warn("[DefaultTrace] Corrupted call stack found TraceRoot:{}, CallStack:{}", getTraceRoot(), callStack, exception);
+        logger.warn("Corrupted call stack found TraceRoot:{}, CallStack:{}", getTraceRoot(), callStack, exception);
     }
 
     @Override
@@ -168,9 +166,7 @@ public class AsyncChildTrace implements Trace {
 
     public void close0() {
         if (closed) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Already closed {}", this);
-            }
+            logger.warn("Already closed {}", this);
             return;
         }
         closed = true;
@@ -261,7 +257,7 @@ public class AsyncChildTrace implements Trace {
     }
 
     private SpanEvent newSpanEvent(int stackId) {
-        final SpanEvent spanEvent = callStack.getFactory().newInstance();
+        final SpanEvent spanEvent = callStack.newInstance();
         spanEvent.markStartTime();
         spanEvent.setStackId(stackId);
         return spanEvent;
@@ -269,12 +265,12 @@ public class AsyncChildTrace implements Trace {
 
     @VisibleForTesting
     SpanEvent dummySpanEvent() {
-        return callStack.getFactory().disableInstance();
+        return callStack.disableInstance();
     }
 
     @VisibleForTesting
     boolean isDummySpanEvent(final SpanEvent spanEvent) {
-        return callStack.getFactory().isDisable(spanEvent);
+        return callStack.isDisable(spanEvent);
     }
 
     @Override
