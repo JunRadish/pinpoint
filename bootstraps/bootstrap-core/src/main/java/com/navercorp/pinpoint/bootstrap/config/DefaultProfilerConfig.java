@@ -47,7 +47,7 @@ public class DefaultProfilerConfig implements ProfilerConfig {
 
     private final Properties properties;
 
-    private static final TransportModule DEFAULT_TRANSPORT_MODULE = TransportModule.THRIFT;
+    private static final TransportModule DEFAULT_TRANSPORT_MODULE = TransportModule.GRPC;
 
     @Value("${profiler.enable:true}")
     private boolean profileEnable = false;
@@ -56,7 +56,7 @@ public class DefaultProfilerConfig implements ProfilerConfig {
     private int logDirMaxBackupSize = 5;
 
     @Value("${" + Profiles.ACTIVE_PROFILE_KEY + " }")
-    private String activeProfile = Profiles.DEFAULT_ACTIVE_PROFILE;
+    private String activeProfile = "";
 
     @VisibleForTesting
     private boolean staticResourceCleanup = false;
@@ -258,18 +258,16 @@ public class DefaultProfilerConfig implements ProfilerConfig {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("DefaultProfilerConfig{");
-        sb.append("profileEnable='").append(profileEnable).append('\'');
-        sb.append(", activeProfile=").append(activeProfile);
-        sb.append(", logDirMaxBackupSize=").append(logDirMaxBackupSize);
-        sb.append(", staticResourceCleanup=").append(staticResourceCleanup);
-        sb.append(", jdbcSqlCacheSize=").append(jdbcSqlCacheSize);
-        sb.append(", traceSqlBindValue=").append(traceSqlBindValue);
-        sb.append(", maxSqlBindValueSize=").append(maxSqlBindValueSize);
-        sb.append(", httpStatusCodeErrors=").append(httpStatusCodeErrors);
-        sb.append(", injectionModuleFactoryClazzName='").append(injectionModuleFactoryClazzName).append('\'');
-        sb.append(", applicationNamespace='").append(applicationNamespace).append('\'');
-        sb.append('}');
-        return sb.toString();
+        return "DefaultProfilerConfig{" + "profileEnable='" + profileEnable + '\'' +
+                ", activeProfile=" + activeProfile +
+                ", logDirMaxBackupSize=" + logDirMaxBackupSize +
+                ", staticResourceCleanup=" + staticResourceCleanup +
+                ", jdbcSqlCacheSize=" + jdbcSqlCacheSize +
+                ", traceSqlBindValue=" + traceSqlBindValue +
+                ", maxSqlBindValueSize=" + maxSqlBindValueSize +
+                ", httpStatusCodeErrors=" + httpStatusCodeErrors +
+                ", injectionModuleFactoryClazzName='" + injectionModuleFactoryClazzName + '\'' +
+                ", applicationNamespace='" + applicationNamespace + '\'' +
+                '}';
     }
 }

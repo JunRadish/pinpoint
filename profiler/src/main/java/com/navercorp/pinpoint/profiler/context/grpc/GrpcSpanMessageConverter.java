@@ -21,6 +21,7 @@ import com.google.protobuf.StringValue;
 import com.navercorp.pinpoint.bootstrap.context.TraceId;
 import com.navercorp.pinpoint.common.annotations.VisibleForTesting;
 import com.navercorp.pinpoint.common.profiler.logging.ThrottledLogger;
+import com.navercorp.pinpoint.common.profiler.message.MessageConverter;
 import com.navercorp.pinpoint.common.util.CollectionUtils;
 import com.navercorp.pinpoint.common.util.IntStringValue;
 import com.navercorp.pinpoint.common.util.StringUtils;
@@ -48,7 +49,6 @@ import com.navercorp.pinpoint.profiler.context.SpanType;
 import com.navercorp.pinpoint.profiler.context.compress.SpanProcessor;
 import com.navercorp.pinpoint.profiler.context.id.Shared;
 import com.navercorp.pinpoint.profiler.context.id.TraceRoot;
-import com.navercorp.pinpoint.profiler.context.thrift.MessageConverter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -80,19 +80,26 @@ public class GrpcSpanMessageConverter implements MessageConverter<SpanType, Gene
 
     private final PAnnotation.Builder pAnnotationBuilder = PAnnotation.newBuilder();
 
+    public enum SpanUriType {
+        TEMPLATE, RAW
+    }
+
+    private final SpanUriType spanCollectedUriType;
+
     public GrpcSpanMessageConverter(String agentId, short applicationServiceType,
-                                    SpanProcessor<PSpan.Builder, PSpanChunk.Builder> spanProcessor) {
+                                    SpanProcessor<PSpan.Builder, PSpanChunk.Builder> spanProcessor,
+                                    String spanCollectedUriType) {
         this.agentId = Objects.requireNonNull(agentId, "agentId");
         this.applicationServiceType = applicationServiceType;
         this.spanProcessor = Objects.requireNonNull(spanProcessor, "spanProcessor");
+        this.spanCollectedUriType = SpanUriType.valueOf(spanCollectedUriType);
     }
 
     @Override
     public GeneratedMessageV3 toMessage(SpanType message) {
         if (message instanceof SpanChunk) {
             final SpanChunk spanChunk = (SpanChunk) message;
-            final PSpanChunk pSpanChunk = buildPSpanChunk(spanChunk);
-            return pSpanChunk;
+            return buildPSpanChunk(spanChunk);
         }
         if (message instanceof Span) {
             final Span span = (Span) message;
@@ -189,7 +196,13 @@ public class GrpcSpanMessageConverter implements MessageConverter<SpanType, Gene
         }
 
         final Shared shared = span.getTraceRoot().getShared();
-        final String rpc = shared.getRpcName();
+        final String rpc;
+        if (spanCollectedUriType == SpanUriType.RAW) {
+            rpc = shared.getRpcName();
+        } else {
+            rpc = shared.getUriTemplate();
+        }
+
         if (StringUtils.isEmpty(rpc)) {
             hasEmptyValue = true;
             builder.setRpc(DEFAULT_RPC_NAME);
@@ -246,8 +259,8 @@ public class GrpcSpanMessageConverter implements MessageConverter<SpanType, Gene
         final int eventSize = spanEventList.size();
         final List<PSpanEvent> pSpanEventList = new ArrayList<>(eventSize);
         for (SpanEvent spanEvent : spanEventList) {
-            final PSpanEvent.Builder pSpanEvent = buildPSpanEvent(spanEvent);
-            pSpanEventList.add(pSpanEvent.build());
+            final PSpanEvent pSpanEvent = buildPSpanEvent(spanEvent);
+            pSpanEventList.add(pSpanEvent);
         }
         return pSpanEventList;
     }
@@ -298,50 +311,53 @@ public class GrpcSpanMessageConverter implements MessageConverter<SpanType, Gene
     }
 
     @VisibleForTesting
-    public PSpanEvent.Builder buildPSpanEvent(SpanEvent spanEvent) {
-        final PSpanEvent.Builder pSpanEvent = getSpanEventBuilder();
-
+    public PSpanEvent buildPSpanEvent(SpanEvent spanEvent) {
+        final PSpanEvent.Builder builder = this.pSpanEventBuilder;
+        try {
 //        if (spanEvent.getStartElapsed() != 0) {
-//          tSpanEvent.setStartElapsed(spanEvent.getStartElapsed());
+//          builder.setStartElapsed(spanEvent.getStartElapsed());
 //        }
 //        tSpanEvent.setStartElapsed(spanEvent.getStartElapsed());
-        if (spanEvent.getElapsedTime() != 0) {
-            pSpanEvent.setEndElapsed(spanEvent.getElapsedTime());
+            if (spanEvent.getElapsedTime() != 0) {
+                builder.setEndElapsed(spanEvent.getElapsedTime());
+            }
+            builder.setSequence(spanEvent.getSequence());
+//        builder.setRpc(spanEvent.getRpc());
+            builder.setServiceType(spanEvent.getServiceType());
+
+            //        tSpanEvent.setAnnotations();
+            if (spanEvent.getDepth() != -1) {
+                builder.setDepth(spanEvent.getDepth());
+            }
+
+            builder.setApiId(spanEvent.getApiId());
+
+            final IntStringValue exceptionInfo = spanEvent.getExceptionInfo();
+            if (exceptionInfo != null) {
+                PIntStringValue pIntStringValue = buildPIntStringValue(exceptionInfo);
+                builder.setExceptionInfo(pIntStringValue);
+            }
+
+            final PNextEvent nextEvent = buildNextEvent(spanEvent);
+            if (nextEvent != null) {
+                builder.setNextEvent(nextEvent);
+            }
+            final AsyncId asyncIdObject = spanEvent.getAsyncIdObject();
+            if (asyncIdObject != null) {
+                builder.setAsyncEvent(asyncIdObject.getAsyncId());
+            }
+
+
+            final List<Annotation<?>> annotations = spanEvent.getAnnotations();
+            if (CollectionUtils.hasLength(annotations)) {
+                final List<PAnnotation> pAnnotations = buildPAnnotation(annotations);
+                builder.addAllAnnotation(pAnnotations);
+            }
+
+            return builder.build();
+        } finally {
+            builder.clear();
         }
-        pSpanEvent.setSequence(spanEvent.getSequence());
-//        tSpanEvent.setRpc(spanEvent.getRpc());
-        pSpanEvent.setServiceType(spanEvent.getServiceType());
-
-        //        tSpanEvent.setAnnotations();
-        if (spanEvent.getDepth() != -1) {
-            pSpanEvent.setDepth(spanEvent.getDepth());
-        }
-
-        pSpanEvent.setApiId(spanEvent.getApiId());
-
-        final IntStringValue exceptionInfo = spanEvent.getExceptionInfo();
-        if (exceptionInfo != null) {
-            PIntStringValue pIntStringValue = buildPIntStringValue(exceptionInfo);
-            pSpanEvent.setExceptionInfo(pIntStringValue);
-        }
-
-        final PNextEvent nextEvent = buildNextEvent(spanEvent);
-        if (nextEvent != null) {
-            pSpanEvent.setNextEvent(nextEvent);
-        }
-        final AsyncId asyncIdObject = spanEvent.getAsyncIdObject();
-        if (asyncIdObject != null) {
-            pSpanEvent.setAsyncEvent(asyncIdObject.getAsyncId());
-        }
-
-
-        final List<Annotation<?>> annotations = spanEvent.getAnnotations();
-        if (CollectionUtils.hasLength(annotations)) {
-            final List<PAnnotation> pAnnotations = buildPAnnotation(annotations);
-            pSpanEvent.addAllAnnotation(pAnnotations);
-        }
-
-        return pSpanEvent;
     }
 
     private PNextEvent buildNextEvent(SpanEvent spanEvent) {
@@ -391,28 +407,26 @@ public class GrpcSpanMessageConverter implements MessageConverter<SpanType, Gene
 
     @VisibleForTesting
     List<PAnnotation> buildPAnnotation(List<Annotation<?>> annotations) {
-        final List<PAnnotation> tAnnotationList = new ArrayList<>(annotations.size());
-        for (Annotation<?> annotation : annotations) {
-            final PAnnotation.Builder builder = getAnnotationBuilder();
+            final List<PAnnotation> tAnnotationList = new ArrayList<>(annotations.size());
+            for (Annotation<?> annotation : annotations) {
+                PAnnotation pAnnotation = buildPAnnotation0(annotation);
+                tAnnotationList.add(pAnnotation);
+            }
+            return tAnnotationList;
+    }
+
+    private PAnnotation buildPAnnotation0(Annotation<?> annotation) {
+        final PAnnotation.Builder builder = this.pAnnotationBuilder;
+        try {
             builder.setKey(annotation.getKey());
             final PAnnotationValue pAnnotationValue = grpcAnnotationValueMapper.buildPAnnotationValue(annotation);
             if (pAnnotationValue != null) {
                 builder.setValue(pAnnotationValue);
             }
-            PAnnotation pAnnotation = builder.build();
-            tAnnotationList.add(pAnnotation);
+            return builder.build();
+        } finally {
+            builder.clear();
         }
-        return tAnnotationList;
-    }
-
-    private PAnnotation.Builder getAnnotationBuilder() {
-        this.pAnnotationBuilder.clear();
-        return pAnnotationBuilder;
-    }
-
-    private PSpanEvent.Builder getSpanEventBuilder() {
-        pSpanEventBuilder.clear();
-        return pSpanEventBuilder;
     }
 
     @Override

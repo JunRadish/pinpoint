@@ -19,15 +19,17 @@ package com.navercorp.pinpoint.collector.cluster.route;
 import com.navercorp.pinpoint.collector.cluster.ClusterPoint;
 import com.navercorp.pinpoint.collector.cluster.ClusterPointLocator;
 import com.navercorp.pinpoint.collector.cluster.GrpcAgentConnection;
-import com.navercorp.pinpoint.collector.cluster.ThriftAgentConnection;
 import com.navercorp.pinpoint.collector.cluster.route.filter.RouteFilter;
-import com.navercorp.pinpoint.rpc.Future;
-import com.navercorp.pinpoint.rpc.ResponseMessage;
+import com.navercorp.pinpoint.io.ResponseMessage;
 import com.navercorp.pinpoint.thrift.dto.command.TCommandTransferResponse;
 import com.navercorp.pinpoint.thrift.dto.command.TRouteResult;
-
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.thrift.TBase;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * @author koo.taejin
@@ -83,37 +85,34 @@ public class DefaultRouteHandler extends AbstractRouteHandler<RequestEvent> {
             return createResponse(TRouteResult.NOT_SUPPORTED_REQUEST);
         }
 
-        Future<ResponseMessage> future;
-        if (clusterPoint instanceof ThriftAgentConnection) {
-            ThriftAgentConnection thriftAgentConnection = (ThriftAgentConnection) clusterPoint;
-            future = thriftAgentConnection.request(event.getDeliveryCommand().getPayload());
-        } else if (clusterPoint instanceof GrpcAgentConnection) {
+        CompletableFuture<ResponseMessage> future;
+        if (clusterPoint instanceof GrpcAgentConnection) {
             GrpcAgentConnection grpcAgentConnection = (GrpcAgentConnection) clusterPoint;
             future = grpcAgentConnection.request(event.getRequestObject());
         } else {
             return createResponse(TRouteResult.NOT_ACCEPTABLE);
         }
 
-        boolean isCompleted = future.await();
-        if (!isCompleted) {
+        try {
+            ResponseMessage responseMessage = future.get(3000, TimeUnit.MILLISECONDS);
+            if (responseMessage == null) {
+                return createResponse(TRouteResult.EMPTY_RESPONSE);
+            }
+
+            final byte[] responsePayload = responseMessage.getMessage();
+            if (ArrayUtils.isEmpty(responsePayload)) {
+                return createResponse(TRouteResult.EMPTY_RESPONSE, new byte[0]);
+            }
+
+            return createResponse(TRouteResult.OK, responsePayload);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return createResponse(TRouteResult.UNKNOWN, e.getMessage());
+        } catch (ExecutionException e) {
+            return createResponse(TRouteResult.UNKNOWN, e.getCause().getMessage());
+        } catch (TimeoutException e) {
             return createResponse(TRouteResult.TIMEOUT);
         }
-
-        if (future.getCause() != null) {
-            return createResponse(TRouteResult.UNKNOWN, future.getCause().getMessage());
-        }
-
-        ResponseMessage responseMessage = future.getResult();
-        if (responseMessage == null) {
-            return createResponse(TRouteResult.EMPTY_RESPONSE);
-        }
-
-        final byte[] responsePayload = responseMessage.getMessage();
-        if (ArrayUtils.isEmpty(responsePayload)) {
-            return createResponse(TRouteResult.EMPTY_RESPONSE, new byte[0]);
-        }
-
-        return createResponse(TRouteResult.OK, responsePayload);
     }
 
 }

@@ -60,14 +60,18 @@ class ProfilePropertyLoader implements PropertyLoader {
     /**
      * <pre>Configuration order</pre>
      *
-     * <p> Same order as Spring-Boot
-     * <p> https://docs.spring.io/spring-boot/docs/2.1.9.RELEASE/reference/html/boot-features-external-config.html
+     * <p> Same order as Spring-Boot </p>
+     * <p>
+     *     <a href="https://docs.spring.io/spring-boot/docs/2.1.9.RELEASE/reference/html/boot-features-external-config.html">
+     *         boot-features-external-config
+     *     </a>
+     * </p>
      * <ol>
-     * <li>Java System properties
-     * <li>OS environment variables
-     * <li>agent external configuration
-     * <li>agent profile configuration /profiles/${profile}/pinpoint.config
-     * <li>agent config /pinpoint-env.config
+     *     <li>Java System properties</li>
+     *     <li>OS environment variables</li>
+     *     <li>agent external configuration</li>
+     *     <li>agent profile configuration /profiles/${profile}/pinpoint.config</li>
+     *     <li>agent config /pinpoint-env.config</li>
      * </ol>
      */
     @Override
@@ -118,7 +122,7 @@ class ProfilePropertyLoader implements PropertyLoader {
     private void saveLogConfigLocation(String activeProfile, Properties properties) {
         String log4jLocation = properties.getProperty(Profiles.LOG_CONFIG_LOCATION_KEY);
         if (StringUtils.isEmpty(log4jLocation)) {
-            LogConfigResolver logConfigResolver = new ProfileLogConfigResolver(profilesPath, activeProfile);
+            LogConfigResolver logConfigResolver = new SimpleLogConfigResolver(agentRootPath);
             log4jLocation = logConfigResolver.getLogPath().toString();
 
             properties.put(Profiles.LOG_CONFIG_LOCATION_KEY, log4jLocation);
@@ -135,8 +139,9 @@ class ProfilePropertyLoader implements PropertyLoader {
             profile = defaultProperties.getProperty(Profiles.ACTIVE_PROFILE_KEY);
         }
         if (profile == null) {
-            // default profile
-            profile = Profiles.DEFAULT_ACTIVE_PROFILE;
+            throw new RuntimeException("Failed to detect pinpoint profile. Please add -D" +
+                    Profiles.ACTIVE_PROFILE_KEY +
+                    "=<profile> to VM option. Valid profiles are \"" + String.join(" | ", supportedProfiles) + "\"");
         }
 
         // prevent directory traversal attack

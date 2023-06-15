@@ -34,6 +34,7 @@ import com.navercorp.pinpoint.web.config.ConfigProperties;
 import com.navercorp.pinpoint.web.filter.FilterBuilder;
 import com.navercorp.pinpoint.web.install.controller.AgentDownloadController;
 import com.navercorp.pinpoint.web.install.service.AgentDownLoadService;
+import com.navercorp.pinpoint.web.service.ActiveThreadDumpService;
 import com.navercorp.pinpoint.web.service.AdminService;
 import com.navercorp.pinpoint.web.service.AgentEventService;
 import com.navercorp.pinpoint.web.service.AgentInfoService;
@@ -83,8 +84,12 @@ public class AuthorizationConfig {
     }
 
     @Bean
-    public AgentCommandController createAgentCommandController(ConfigProperties webProperties, AgentService agentService) {
-        return new AgentCommandController(webProperties, agentService);
+    public AgentCommandController createAgentCommandController(
+            ConfigProperties webProperties,
+            AgentService agentService,
+            ActiveThreadDumpService activeThreadDumpService
+    ) {
+        return new AgentCommandController(webProperties, agentService, activeThreadDumpService);
     }
 
     @Bean

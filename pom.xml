@@ -103,6 +103,7 @@
         <module>plugins</module>
         <module>plugins-loader</module>
         <module>profiler</module>
+        <module>thrift-datasender</module>
         <module>profiler-logging</module>
         <module>profiler-optional</module>
         <module>profiler-test</module>
@@ -121,6 +122,8 @@
         <module>pinot</module>
         <module>metric-module</module>
         <module>uristat</module>
+        <module>realtime</module>
+        <module>redis</module>
 
         <!-- <module>agent-testweb</module> -->
         <!-- <module>plugins-it</module> -->
@@ -164,6 +167,14 @@
         <spring.security.version>5.8.1</spring.security.version>
         <spring.boot.version>2.7.7</spring.boot.version>
 
+        <!-- spring boot3 dependency -->
+        <spring6.version>6.0.8</spring6.version>
+        <spring.boot3.version>3.0.6</spring.boot3.version>
+        <jakarta.servlet6.version>6.0.0</jakarta.servlet6.version>
+        <jakarta.annotation-api2.version>2.1.1</jakarta.annotation-api2.version>
+        <jaxb4.version>4.0.0</jaxb4.version>
+        <jakarta.validation-api3.version>3.0.2</jakarta.validation-api3.version>
+
         <slf4j.version>1.7.30</slf4j.version>
         <log4j2.version>2.20.0</log4j2.version>
         <!-- for plugin & hbase client -->
@@ -174,6 +185,8 @@
         <javax.servlet4.version>4.0.1</javax.servlet4.version>
         <javax.servlet.version>3.0.1</javax.servlet.version>
         <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
+        <jakarta.annotation-api.version>1.3.5</jakarta.annotation-api.version>
+        <jakarta.validation-api.version>2.0.2</jakarta.validation-api.version>
 
 
         <asm.version>9.4</asm.version>
@@ -187,6 +200,7 @@
         <protoc.version>3.21.7</protoc.version>
 
         <guava.version>31.1-jre</guava.version>
+        <guice.version>7.0.0</guice.version>
         <gson.version>2.10.1</gson.version>
 
         <mybatis.spring.version>2.0.7</mybatis.spring.version>
@@ -208,20 +222,20 @@
         <testcontainers.version>1.17.6</testcontainers.version>
 
         <!-- maven-plugin -->
-        <plugin.compiler.version>3.8.1</plugin.compiler.version>
-        <plugin.resources.version>3.2.0</plugin.resources.version>
-        <plugin.surefire.version>3.0.0-M7</plugin.surefire.version>
+        <plugin.compiler.version>3.11.0</plugin.compiler.version>
+        <plugin.resources.version>3.3.1</plugin.resources.version>
+        <plugin.surefire.version>3.1.0</plugin.surefire.version>
         <plugin.failsafe.version>2.22.2</plugin.failsafe.version>
-        <plugin.shade.version>3.1.1</plugin.shade.version>
-        <plugin.assembly.version>3.3.0</plugin.assembly.version>
-        <plugin.jar.version>3.2.0</plugin.jar.version>
+        <plugin.shade.version>3.4.1</plugin.shade.version>
+        <plugin.assembly.version>3.6.0</plugin.assembly.version>
+        <plugin.jar.version>3.3.0</plugin.jar.version>
         <plugin.antrun.version>3.0.0</plugin.antrun.version>
-        <plugin.build-helper.version>3.3.0</plugin.build-helper.version>
+        <plugin.build-helper.version>3.4.0</plugin.build-helper.version>
 
         <plugin.spotbugs.version>4.4.2.2</plugin.spotbugs.version>
         <plugin.pmd.version>3.16.0</plugin.pmd.version>
 
-        <plugin.enforcer.version>3.0.0</plugin.enforcer.version>
+        <plugin.enforcer.version>3.3.0</plugin.enforcer.version>
 
         <!-- frontend-plugin -->
         <plugin.frontend.version>1.12.0</plugin.frontend.version>
@@ -337,6 +351,11 @@
             </dependency>
             <dependency>
                 <groupId>com.navercorp.pinpoint</groupId>
+                <artifactId>pinpoint-redis</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.navercorp.pinpoint</groupId>
                 <artifactId>pinpoint-thrift</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -389,6 +408,11 @@
             <dependency>
                 <groupId>com.navercorp.pinpoint</groupId>
                 <artifactId>pinpoint-profiler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.navercorp.pinpoint</groupId>
+                <artifactId>pinpoint-thrift-datasender</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -447,6 +471,21 @@
             <dependency>
                 <groupId>com.navercorp.pinpoint</groupId>
                 <artifactId>pinpoint-uristat-collector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.navercorp.pinpoint</groupId>
+                <artifactId>pinpoint-realtime-web</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.navercorp.pinpoint</groupId>
+                <artifactId>pinpoint-realtime-collector</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.navercorp.pinpoint</groupId>
+                <artifactId>pinpoint-realtime-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -1123,12 +1162,12 @@
             <dependency>
                 <groupId>jakarta.annotation</groupId>
                 <artifactId>jakarta.annotation-api</artifactId>
-                <version>1.3.5</version>
+                <version>${jakarta.annotation-api.version}</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
-                <version>2.0.2</version>
+                <version>${jakarta.validation-api.version}</version>
             </dependency>
 
 
@@ -1363,7 +1402,7 @@
             <dependency>
                 <groupId>com.google.inject</groupId>
                 <artifactId>guice</artifactId>
-                <version>5.1.0</version>
+                <version>${guice.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.code.gson</groupId>
@@ -1444,7 +1483,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>3.4.0</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1488,7 +1527,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.6</version>
+                    <version>0.8.10</version>
                     <executions>
                         <execution>
                             <id>prepare-agent</id>
@@ -1512,6 +1551,13 @@
                             <exclude>com/navercorp/pinpoint/common/profiler/concurrent/jsr166/**/*.class</exclude>
                             <exclude>com/navercorp/pinpoint/grpc/trace/**/*.java</exclude>
                         </excludes>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${plugin.shade.version}</version>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
                     </configuration>
                 </plugin>
             </plugins>
@@ -1559,7 +1605,6 @@
                     <target>${jdk.version}</target>
                     <fork>true</fork>
                     <debug>true</debug>
-                    <optimize>true</optimize>
                     <encoding>${encoding}</encoding>
                     <showDeprecation>true</showDeprecation>
                     <compilerVersion>${jdk.version}</compilerVersion>
@@ -1581,7 +1626,8 @@
                     <argLine>@{argLine}</argLine>
                     <encoding>${encoding}</encoding>
                     <jvm>${test.jdk.home}/bin/java</jvm>
-                    <forkMode>once</forkMode>
+                    <forkCount>1</forkCount>
+                    <reuseForks>true</reuseForks>
                 </configuration>
             </plugin>
             <plugin>

@@ -68,8 +68,12 @@ class SimplePropertyLoader implements PropertyLoader {
 
 
     private void saveLogConfigLocation(Properties properties) {
-        String activeProfile = systemProperty.getProperty(Profiles.ACTIVE_PROFILE_KEY, Profiles.DEFAULT_ACTIVE_PROFILE);
-        LogConfigResolver logConfigResolver = new ProfileLogConfigResolver(profilesPath, activeProfile);
+        String activeProfile = systemProperty.getProperty(Profiles.ACTIVE_PROFILE_KEY);
+        if (activeProfile == null) {
+            throw new RuntimeException("Failed to read " + Profiles.ACTIVE_PROFILE_KEY + " from systemProperty");
+        }
+
+        LogConfigResolver logConfigResolver = new SimpleLogConfigResolver(agentRootPath);
         final Path log4jLocation = logConfigResolver.getLogPath();
 
         properties.put(Profiles.LOG_CONFIG_LOCATION_KEY, log4jLocation.toString());
